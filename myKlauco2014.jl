@@ -28,28 +28,35 @@ gr()
 
 
 # include("points-n-0020-seed-1024.jl")    # test data by "generate-instance.jl"
-@static if 1 == 0
-    test_file = "points-n-0020-seed-1024.csv"
-    # test_file = "points-n-0040-seed-1024.csv"
-    # test_file = "points-n-0060-seed-1024.csv"
+# 実行時パラメータを指定する場所
+is_includecsv = true
+have_timewindow = false
+
+if is_includecsv
+    test_file = "./points_easy.csv"
     println("loading the data in $(test_file)")
     df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
     q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
+    # TODO: 3,4行目が存在しない場合、printした上でhave_timewindowをfalseにする。
+    if have_timewindow
+        u = [df[i, j] for i = 3:4, j = 1:size(df, 2)]
+    end
 end
-# STOP_HERE
 
 # constants
 # 数値実験欄見て埋める
 # qは簡単のため4点程度で行う。
 # uの可視化どうする？？？
 # 案１. アノテーションのように[u1,u2]と点の近くに書く
-# todo csv 読み込みできるように
-# q = [
-#      5 45 10 30 
-#     10 45 40 20 
-#     ]
-q = [0 0 1 46 48 46 50 50 20 30
-    40 50 49 50 48 46 48 35 5 0]
+# q = [0 0 1 46 48 46 50 50 20 30
+# 40 50 49 50 48 46 48 35 5 0]
+if !is_includecsv
+    q = [45 10 30 
+     45 40 20 ]
+    u = [0 3 2 
+        4 6 100 ]
+end
+
 n = size(q, 2) # the number of target points 
 q_min = [0;0] # qの最小のx、y
 q_max = [60;60]
@@ -58,9 +65,7 @@ v_v = 60 # km/h # default = 90 vehicle speed
 a = 21/60 # vehicle operation range
 p_o = [0;0] # startpoint
 p_f = [50;0]# end point
-u = [0 20 30 50 60 40 20 50 90 10
-    20 40 50 70 70 60 40 70 100 20]
-have_timewindow = false 
+println(u)
 #todo q とuのサイズ違う場合をチェック
 
 
@@ -120,7 +125,7 @@ set_optimizer(model, CPLEX.Optimizer)
 @variable(model, T_1>=0) 
 @variable(model, T_last>=0) 
 if have_timewindow
-    @variable(model, U[i=1:n, j=1:n]>=0)
+    @variable(model, U[1:2,1:n]>=0)
 end
 
 @objective(model, Min,  sum(t) + (T_1+sum(T)+T_last))
@@ -134,13 +139,6 @@ end
 @constraint(model, c5[j = 2:n], [v_c*T[j];p_land[:,j-1] - p_to[:,j]] in SecondOrderCone())
 @constraint(model, c6,[v_c*T_last;p_f - p_land[:, n]] in SecondOrderCone())
 @constraint(model, c7[i = 1:n], (t_1[i]+t_2[i]<=t[i]))
-## TODOOOOO!!!!!!!!
-# @constraint(model, c8[i = 1:n], (Q[i]' == w[i,:]'*q')) # juliaはベクトルの同値可能
-## TODO; 上の制約式をxとyに分けて実装する？？？
-# @constraint(model, c81[i = 1:n], (Q[1,i]' == w[i,:].*q[1,:]))
-# @constraint(model, c81[i = 1:n], (Q[1,i] == LinearAlgebra.dot(w[i,:],q[1,:])))
-# @constraint(model, c81[i = 1:n], (Q[1,i]' == w[i,:].*q[1,:]))
-#TODO
 @constraint(model, c81[i = 1:n], (Q[1,i] == sum(w[i,j]*q[1,j] for j in 1:n)))
 @constraint(model, c82[i = 1:n], (Q[2,i] == sum(w[i,j]*q[2,j] for j in 1:n)))
 @constraint(model, c9[i = 1:n], 1 == sum(w[i,:])) # for i
@@ -199,7 +197,6 @@ elapsed_time = @elapsed optimize!(model)
 
 
 println(value.(p_to))
-println(p_o)
 println(value.(T_1))
 
 ## print flight sequence
@@ -275,4 +272,5 @@ for k = 1:n
     end
 end
 display(p2)
+savefig("/Users/wakitakouhei/Lab/paper_2022/hoge.png")
 end
