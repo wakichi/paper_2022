@@ -8,9 +8,9 @@ using StatsBase # 重複なく2つ抜き出すのに使用
 
 
 ENV["CPLEX_STUDIO_BINARIES"] = "/Applications/CPLEX_Studio221/cplex/bin/x86-64_osx/"
-import Pkg
-Pkg.add("CPLEX")
-Pkg.build("CPLEX")
+#import Pkg
+#Pkg.add("CPLEX")
+#Pkg.build("CPLEX")
 using JuMP
 using CPLEX
 
@@ -57,7 +57,7 @@ function climing(q,u)
     # 初期解の生成(どういう形？)(1 0 0 0;0 0 1 0)的な形
     seq = make_first_seq(q,u)
     score = calc_score(seq, q, u)
-    for i = 1:1000
+    for i = 1:100
         # 近傍をとる。
         n_seq = make_new_seq(seq)
         # スコアの算出(cplexに投げる)
@@ -74,6 +74,10 @@ function climing(q,u)
     # 結果を可視化するならここで。
     return (score, seq)
 end
+
+# function annealing(q,u)
+#     return 0
+# end
 
 function make_first_seq(q,u)
     # TODO:tspで初期回を生成する。
@@ -152,6 +156,12 @@ end
 function make_new_seq(seq)
     # ok
     # 近傍をとる関数
+    # 2-optも入れる
+    n_seq = simple_swap(seq)
+    return n_seq
+end
+
+function simple_swap(seq)
     i,j = sample(1:n, 2, replace=false)
     seq_i = seq[i,:]
     seq_j = seq[j,:]
@@ -159,6 +169,31 @@ function make_new_seq(seq)
     n_seq[i,:] = seq_j
     n_seq[j,:] = seq_i
     return n_seq
+end
+
+function two_opt(seq)
+    # seqを行列から巡る順番の配列に直す。
+    vec = matrix_to_vector(seq)
+    sz = length(vec)
+    if sz<4 return seq end
+    # 交換する場所を選択する
+    x = rand(1:sz-1)
+    y = rand(1:sz-1)
+    while x== y
+        y = rand(1:sz-1)
+    end
+    #実際に交換する。
+    d = min(x,y)
+    b = max(x,y)
+    while(d+1<b-1)
+        d+=1
+        b-=1
+        vec[d],vec[b] = vec[b], vec[d]
+    end
+    # 行列になおす
+    matrix = vecter_to_matrix(vec)
+    # return
+    return matrix
 end
 
 function output(res)
@@ -234,4 +269,29 @@ function calctest()
     seq = make_first_seq(q,u)
     calc_score(seq, q, u)
 end
+
+function vecter_to_matrix(vector)
+    """vectorには1~sizeまでの数字がひとつづつ入っていることを要求。"""
+    n= length(vector)
+    matrix = zeros(Int, n,n)
+    for idx in vector
+        matrix[idx, vector[idx]] = 1
+    end
+    return matrix
+end
+
+function matrix_to_vector(matrix)
+    n = size(matrix, 1)
+    vector = zeros(Int, n)
+    for i in 1:n
+        for j in 1:n
+            if matrix[i,j] == 1
+                vector[i] = j
+                break
+            end
+        end
+    end
+    return vector
+end
+
 main()
