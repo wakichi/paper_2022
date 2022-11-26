@@ -17,12 +17,20 @@ using CPLEX
 # パラメータの設定(global)
 is_includecsv = true
 have_timewindow = false
-is_plot = false
+is_plot = true
+n_iteration = 1
+
+q_min = [0;0] # qの最小のx、y
+q_max = [60;60]
+v_c = 18 # km/h # default = 18 carrior speed
+v_v = 60 # km/h # default = 90 vehicle speed
+a = 21/60 # vehicle operation range
+p_o = [0;0] # startpoint
+p_f = [50;0]# end point
 
 function main()
     # 入力
     q, u = input()
-    global n = size(q, 2)
     # ヒューリスティックの実行部分
     score, seq = climing(q, u)
     # 出力
@@ -31,10 +39,11 @@ end
 
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points_hard.csv"
+        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points_easy.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
+        global n = size(q, 2)
         # TODO: 3,4行目が存在しない場合、printした上でhave_timewindowをfalseにする。
         if have_timewindow
             u = [df[i, j] for i = 3:4, j = 1:size(df, 2)]
@@ -48,7 +57,18 @@ function input()
            200 200 300 ]
     end
     if is_plot
-        # plotする
+        global p1 = plot(xlims=(-5, 55), ylims=(-5, 55), legend=:none, aspect_ratio=:equal)
+        scatter!(p1, q[1, :], q[2, :])
+        for i = 1:n
+            if have_timewindow
+                annotate!(p1, q[1, i] + 1, q[2, i]+3, text(string("[", u[1,i], " ", u[2,i],"]"), :red, 5))
+            end
+            annotate!(p1, q[1, i] + 1, q[2, i]+1, text("q$(i)", :blue, 10))
+        end
+        scatter!(p1, [p_o[1] p_f[1]], [p_o[2] p_f[2]], color=:blue)
+        annotate!(p1,p_o[1] + 2, p_o[2], text("p_s", :blue, 10))
+        annotate!(p1, p_f[1] + 2, p_f[2], text("p_f", :blue, 10))
+        display(p1)
     end
     return (q,u)
 end
@@ -57,7 +77,7 @@ function climing(q,u)
     # 初期解の生成(どういう形？)(1 0 0 0;0 0 1 0)的な形
     seq = make_first_seq(q,u)
     score = calc_score(seq, q, u)
-    for i = 1:100
+    for i = 1:n_iteration
         # 近傍をとる。
         n_seq = make_new_seq(seq)
         # スコアの算出(cplexに投げる)
@@ -91,13 +111,6 @@ function calc_score(w, q, u)
     # cplexを用いてsequenceからスコアを計算する。
     # スコアは単純に目的関数値を用いる。
     n = size(q, 2) # the number of target points 
-    q_min = [0;0] # qの最小のx、y
-    q_max = [60;60]
-    v_c = 18 # km/h # default = 18 carrior speed
-    v_v = 60 # km/h # default = 90 vehicle speed
-    a = 21/60 # vehicle operation range
-    p_o = [0;0] # startpoint
-    p_f = [50;0]# end point
 
     model = Model()
     # set_optimizer(model, Mosek.Optimizer)
@@ -150,6 +163,7 @@ function calc_score(w, q, u)
     # @show termination_status(model)
     # @show objective_value(model)
     # @show elapsed_time # cputime
+    output(p_to, p_land, w, q)
     return objective_value(model)
 end
 
@@ -196,7 +210,13 @@ function two_opt(seq)
     return matrix
 end
 
-function output(res)
+function output( p_to, p_land, seq, q)
+
+    p2 = deepcopy(p1)
+    pto_value = value.(p_to)
+    pland_value = value.(p_land)
+    Q_value =make_Q(seq, q)
+    tlvector = matrix_to_vector(seq)
     # intial to the first takeoff
     plot!(p2, [p_o[1], pto_value[1, 1]], [p_o[2], pto_value[2, 1]],
     color=:black)
@@ -243,6 +263,7 @@ function output(res)
                 label="")
         end
     end
+    display(p2)
 end
 
 function output_easy(seq, score)
@@ -292,6 +313,17 @@ function matrix_to_vector(matrix)
         end
     end
     return vector
+end
+
+function make_Q(seq, q)
+    vec = matrix_to_vector(seq)
+    Q = zeros(Float64, 2,length(vec))
+    for i in 1:length(vec)
+        idx_Q = vec[i]
+        Q[1, i] = q[1, idx_Q]
+        Q[2,i] = q[2, idx_Q]
+    end
+    return Q
 end
 
 main()
