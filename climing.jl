@@ -18,7 +18,8 @@ using CPLEX
 is_includecsv = true
 have_timewindow = false
 is_plot = true
-n_iteration = 1
+n_iteration = 10
+is_movie_mode = false
 
 q_min = [0;0] # qの最小のx、y
 q_max = [60;60]
@@ -32,9 +33,9 @@ function main()
     # 入力
     q, u = input()
     # ヒューリスティックの実行部分
-    score, seq = climing(q, u)
+    score, seq, p_to, p_land = climing(q, u)
     # 出力
-    # output_easy(seq, score)
+    output( p_to, p_land, seq, q)
 end
 
 function input()
@@ -76,12 +77,12 @@ end
 function climing(q,u)
     # 初期解の生成(どういう形？)(1 0 0 0;0 0 1 0)的な形
     seq = make_first_seq(q,u)
-    score = calc_score(seq, q, u)
+    score,p_to,p_land = calc_score(seq, q, u)
     for i = 1:n_iteration
         # 近傍をとる。
         n_seq = make_new_seq(seq)
         # スコアの算出(cplexに投げる)
-        n_score = calc_score(n_seq, q, u)
+        n_score,n_p_to, n_p_land = calc_score(n_seq, q, u)
         # 順列を更新するか判断する。
         println("i:", i)
         output_easy(seq, score)
@@ -89,10 +90,16 @@ function climing(q,u)
         if score>n_score # 最小化問題なので
             score = n_score
             seq = n_seq
+            if is_movie_mode
+                output(p_to, p_land, n_seq, q)
+                sleep(0.5)
+            end
+            p_land = n_p_land
+            p_to = n_p_to
         end
     end
     # 結果を可視化するならここで。
-    return (score, seq)
+    return (score, seq, p_to, p_land)
 end
 
 # function annealing(q,u)
@@ -163,8 +170,7 @@ function calc_score(w, q, u)
     # @show termination_status(model)
     # @show objective_value(model)
     # @show elapsed_time # cputime
-    output(p_to, p_land, w, q)
-    return objective_value(model)
+    return objective_value(model), p_to, p_land
 end
 
 function make_new_seq(seq)
