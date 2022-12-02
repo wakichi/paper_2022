@@ -16,10 +16,10 @@ using CPLEX
 
 # パラメータの設定(global)
 is_includecsv = true
-have_timewindow  = true
+have_timewindow  = false
 is_plot = true
-n_iteration = 500
-is_movie_mode = false
+n_iteration = 1000
+is_movie_mode = true
 
 q_min = [0;0] # qの最小のx、y
 q_max = [60;60]
@@ -41,7 +41,7 @@ end
 
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points_mid.csv"
+        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points_hard.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -103,8 +103,13 @@ end
 
 function annealing(q,u)
     seq = make_first_seq(q,u)
+    first_temp = 1
+    end_temp = 0.001
+
     score,p_to,p_land = calc_score(seq, q, u)
+    best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
     for i = 1:n_iteration
+        temp = first_temp+(end_temp - first_temp)*(i/n_iteration)
         # 近傍をとる。
         n_seq = make_new_seq(seq)
         # スコアの算出(cplexに投げる)
@@ -112,24 +117,28 @@ function annealing(q,u)
         # 順列を更新するか判断する。
         println("i:", i)
         output_easy(n_seq, score)
-        if score>=n_score # 最小化問題なので
+        prob = exp((score - n_score)/temp)
+        println("prob", prob, "   ",score - n_score)
+        println("temp", temp)
+        # best case 
+        if n_score<best_score
+            best_score = n_score
+            best_p_to = n_p_to
+            best_p_land = n_p_land
+            best_seq = n_seq
+        end
+        if prob> rand()
             if (is_movie_mode && score!= n_score)
                 output(p_to, p_land, n_seq, q)
             end
+            # 更新
             score = n_score
             seq = n_seq
             p_land = n_p_land
             p_to = n_p_to
         end
-        # 確率pで変化を受け入れる。
-        pr = 1- i/n_iteration
-        if p>rand()
-            p_land = n_p_land
-            p_to = n_p_to
-        end
     end
-    # 結果を可視化するならここで。
-    return (score, seq, p_to, p_land)
+    return (best_score, best_seq, best_p_to, best_p_land)
 end
 
 function make_first_seq(q,u)
