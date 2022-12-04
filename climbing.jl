@@ -16,9 +16,9 @@ using CPLEX
 
 # パラメータの設定(global)
 is_includecsv = true
-have_timewindow  = false
+have_timewindow  = true
 is_plot = true
-n_iteration = 1000
+n_iteration = 100
 is_movie_mode = true
 
 q_min = [0;0] # qの最小のx、y
@@ -41,11 +41,10 @@ end
 
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points_hard.csv"
+        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0010-seed-1029.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
-        global n = size(q, 2)
         # TODO: 3,4行目が存在しない場合、printした上でhave_timewindowをfalseにする。
         if have_timewindow
             u = [df[i, j] for i = 3:4, j = 1:size(df, 2)]
@@ -58,6 +57,7 @@ function input()
         u = [0 0 200 
            200 200 300 ]
     end
+    global n = size(q, 2)
     if is_plot
         global p1 = plot(xlims=(-5, 55), ylims=(-5, 55), legend=:none, aspect_ratio=:equal)
         scatter!(p1, q[1, :], q[2, :])
@@ -142,7 +142,7 @@ function annealing(q,u)
 end
 
 function make_first_seq(q,u)
-    seq = simple_first_seq(q, u)
+    seq = MISOCP_solverd_first_seq(q, u)
     return seq
 end
 
@@ -152,26 +152,54 @@ function simple_first_seq(q, u)
     return seq
 end
 
-function solverd_first_seq(q, u)
-    # ドローンなしの整数計画問題を解く
-    # まずは定式化する。
-    n = size(q, 2) # the number of target points 
+function Integer_solverd_first_seq(q, u)
+    distance_matrix = calc_distance(q)
 
+    return 0
+end
+
+function MISOCP_solverd_first_seq(q, u)
+    """
+    droneなしVRPを解きます。
+    とりあえず速度はトラック。
+    間に合わないならドローンの速度にする
+    """
+    n = size(q, 2)
     model = Model()
-    # set_optimizer(model, Mosek.Optimizer)
-    # set_optimizer(model, Gurobi.Optimizer)
     set_optimizer(model, CPLEX.Optimizer)
-
+    # 決定変数
+    @variable(model, w[1:n, 1:n],Bin)
     @variable(model, q_min[i]<=Q[i = 1:2, 1:n]<=q_max[i])
-    # todo: aとtの関係はconstraintで、
-    @variable(model, T[i=2:n]>=0) # T=1は下に分離
+    @variable(model, T[i=2:n]>=0) # T=1、n＋1は下に分離
     # println("about T", T)#ok!
-    @variable(model, T_start>=0) 
+    @variable(model, T_first>=0) 
     @variable(model, T_last>=0) 
     if have_timewindow
         @variable(model, U[1:2,1:n]>=0)
     end
-    @objective(model, Min, (T_1+sum(T)+T_last))
+    # 目的関数
+    @objective(model, Min,   (T_first+sum(T)+T_last))
+    # 制約
+    @constraint(model, c4, [v_v*T_first;Q[:, 1] - p_o[:,1]] in SecondOrderCone())
+    @constraint(model, c5[j = 2:n], [v_v*T[j];Q[:,j-1] - Q[:,j]] in SecondOrderCone())
+    @constraint(model, c6,[v_v*T_last;p_f - Q[:, n]] in SecondOrderCone())
+    @constraint(model, c81[i = 1:n], (Q[1,i] == sum(w[i,j]*q[1,j] for j in 1:n)))
+    @constraint(model, c82[i = 1:n], (Q[2,i] == sum(w[i,j]*q[2,j] for j in 1:n)))
+    @constraint(model, c9[i = 1:n], 1 == sum(w[i,:])) # for i
+    @constraint(model, c10[j = 1:n], 1 == sum(w[:, j])) # for j
+    if have_timewindow
+        @constraint(model, w1[i = 1:n], (T_first+sum(T[j+1] for j in 1:i-1))<=U[2,i])
+        @constraint(model, w2[i = 1:n], U[1,i]<=(T_first+sum(T[j+1] for j in 1:i-1)))
+        @constraint(model, w3[i = 1:n], (U[1,i] == sum(w[i,j]*u[1,j] for j in 1:n)))
+        @constraint(model, w4[i = 1:n], (U[2,i] == sum(w[i,j]*u[2,j] for j in 1:n)))
+    end
+    set_time_limit_sec(model, 10800.0)
+    elapsed_time = @elapsed optimize!(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    @show elapsed_time # cputime
+    return value.(w)
+
 
 end
 
@@ -235,7 +263,7 @@ function calc_score(w, q, u)
     try
         score = objective_value(model)
     catch
-        score = 9999999999.0 # 10^14でかく
+        score = 100000 # 10^14でかく#TODO: ここの値の調整必要
     end
     return score, p_to, p_land
 end
@@ -381,6 +409,10 @@ function vecter_to_matrix(vector)
 end
 
 function matrix_to_vector(matrix)
+    """
+    input: matrix, 正し、各列、各行に必ず1が一つ他は0
+    output:vector, matrixの1となっている列の数字を入れたベクトル
+    """
     n = size(matrix, 1)
     vector = zeros(Int, n)
     for i in 1:n
@@ -395,6 +427,9 @@ function matrix_to_vector(matrix)
 end
 
 function make_Q(seq, q)
+    """
+    Q:
+    """
     vec = matrix_to_vector(seq)
     Q = zeros(Float64, 2,length(vec))
     for i in 1:length(vec)
@@ -403,6 +438,20 @@ function make_Q(seq, q)
         Q[2,i] = q[2, idx_Q]
     end
     return Q
+end
+
+function calc_distance(q)
+    """
+    qの距離行列を返す.
+    """
+    n = size(q, 2)
+    matrix = zeros(Float32, n,n)
+    for i in 1:n
+        for j in 1:n
+            matrix[i,j] = norm(q[:,i] - q[:,j])
+        end
+    end
+    return matrix
 end
 
 main()
