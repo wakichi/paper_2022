@@ -1,9 +1,9 @@
 ## Packages 
 
 ENV["CPLEX_STUDIO_BINARIES"] = "/Applications/CPLEX_Studio221/cplex/bin/x86-64_osx/"
-import Pkg
-Pkg.add("CPLEX")
-Pkg.build("CPLEX")
+# import Pkg
+# Pkg.add("CPLEX")
+# Pkg.build("CPLEX")
 
 using JuMP
 # using MosekTools
@@ -30,10 +30,10 @@ gr()
 # include("points-n-0020-seed-1024.jl")    # test data by "generate-instance.jl"
 # 実行時パラメータを指定する場所
 is_includecsv = true
-have_timewindow = false
+have_timewindow = true
 
 if is_includecsv
-    test_file = "./points_easy.csv"
+    test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0010-seed-1029.csv"
     println("loading the data in $(test_file)")
     df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
     q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -53,8 +53,8 @@ end
 if !is_includecsv
     q = [45 10 30 
      45 40 20 ]
-    u = [0 3 2 
-        4 6 100 ]
+    u = [0 0 200 
+        200 200 300 ]
 end
 
 n = size(q, 2) # the number of target points 
@@ -65,7 +65,6 @@ v_v = 60 # km/h # default = 90 vehicle speed
 a = 21/60 # vehicle operation range
 p_o = [0;0] # startpoint
 p_f = [50;0]# end point
-println(u)
 #todo q とuのサイズ違う場合をチェック
 
 
@@ -128,7 +127,7 @@ if have_timewindow
     @variable(model, U[1:2,1:n]>=0)
 end
 
-@objective(model, Min,  sum(t) + (T_1+sum(T)+T_last))
+@objective(model, Min,  sum(t) + 1.000001*(T_1+sum(T)+T_last))
 
 # Qの列どうやってとる？？
 @constraint(model, c0[i = 1:n], t[i]<=a)

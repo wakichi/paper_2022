@@ -19,7 +19,7 @@ have_timewindow = true
 is_round = true #time_windowを整数にするか否か
 
 ## データ初期化
-n = 10 # ターゲット数
+n = 15 # ターゲット数
 q_s = [0; 0]   # initial point   
 q_f = [50; 0]  # final point 
 q_s_dummy = [0; -1000]   # initial point  (to connect q_s and q_f)
@@ -73,7 +73,7 @@ end
 
 function check_result(q,u)
     ## vehicle_speedで解があるか調べる
-    w, exist_answer = MISOCP_solverd_first_seq(q, u)
+    w, exist_answer = MISOCP_solve(q, u)
     println("exist_answer!!!  ",exist_answer)
     if exist_answer
         println("exist one of answer")
@@ -120,7 +120,7 @@ end
 # targets = [targets[1:pos_init-1, :]; targets[pos_init+1:end, :]]
 # n = size(targets,1)
 
-function MISOCP_solverd_first_seq(q, u)
+function MISOCP_solve(q, u)
     """
     droneなしVRPを解きます。
     とりあえず速度はトラック。

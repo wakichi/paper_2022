@@ -1,0 +1,1384 @@
+\documentclass[11pt,a4paper,dvipdfmx,titlepage,uplatex]{jsarticle}
+
+\usepackage{ascmac}
+\usepackage{url}
+\usepackage{amssymb}
+\usepackage{comment}
+\usepackage{amsthm}
+\usepackage{amsmath}
+
+\usepackage[dvipdfmx]{hyperref}
+\usepackage{pxjahyper}
+\setcounter{tocdepth}{3}%目次をサブセクションまで表示
+
+\bibliographystyle{abbrv}
+
+
+\newtheoremstyle{mystyle}%   % スタイル名
+    {}%b                     % 上部スペース
+    {}%                      % 下部スペース
+    {\normalfont}%              % 本文フォント
+    {}%                      % 1行目のインデント量
+    {\bfseries}%             % 見出しフォント
+    {.}%                     % 見出し後の句読点
+    { }%                     % 見出し後のスペース
+    {\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+
+\theoremstyle{mystyle}
+\newtheorem{mythm}{定理}[section]
+
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+  \pushQED{\qed}%
+  \normalfont \topsep6\p@\@plus6\p@\relax
+  \trivlist
+  \item\relax
+  {\bfseries
+  #1\@addpunct{.}}\hspace\labelsep\ignorespaces
+}{%
+  \popQED\endtrivlist\@endpefalse
+}
+\makeatother
+
+\usepackage{algorithm,algorithmic}
+
+\usepackage{pdfpages}
+\usepackage{graphicx}
+
+\usepackage{mathtools}
+\mathtoolsset{showonlyrefs=true}
+
+\usepackage{enumerate}
+\usepackage{tabularx}
+\newcolumntype{Y}{&gt;{\centering\arraybackslash}X} %中央揃え
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{dcolumn}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{colortbl}
+\usepackage{arydshln}
+
+\usepackage{afterpage}%
+\usepackage{float}
+\usepackage{here}
+
+\usepackage{environ}
+\NewEnviron{resizealign}{\sbox0{\let\notag=\relax
+		$\begin{matrix}\displaystyle\BODY\end{matrix}$}%
+	\sbox1{$(\theequation)$}%
+	\sbox2{\parbox{\dimexpr \wd0 + 2\wd1}%
+		{\begin{align}\BODY\end{align}}}% for testing
+	\noindent\resizebox{\textwidth}{!}{\usebox2}%
+}
+
+\usepackage{listings}
+\renewcommand{\lstlistingname}{List}
+% basicstyle=\ttfamily\small,numberstyle=\ttfamily\footnotesize, numbers=left, frame=single
+\lstset{
+	% language=c,
+	breaklines = true,
+	basicstyle=\ttfamily\small,
+	commentstyle=\textit,
+	% classoffset=1,
+	keywordstyle=\bfseries,
+	frame=single,
+	framesep=5pt,
+	showstringspaces=false,
+	numbers=left,
+	stepnumber=1,
+	upquote = true,
+	numberstyle=\ttfamily\footnotesize
+	% tabsize=2
+}
+
+\usepackage{color}
+\newcommand{\blue}[1]{\begin{color}{blue}#1\end{color}}
+\newcommand{\red}[1]{\begin{color}{red}#1\end{color}}
+\newcommand{\green}[1]{\begin{color}{green}#1\end{color}}
+\newcommand{\memoblue}[1]{\ifmymemo \begin{color}{memoblue}#1\end{color}\fi}
+\newcommand{\modify}[2]{\begin{color}{red}\underline{#1}{#2}\end{color}}
+
+\newcommand{\st}{\textrm{s.t.}}
+\newcommand{\Tr}{\mathbf{T}}
+\newcommand{\0}{\mathbf{0}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\argmin}{\mathrm{argmin}}
+\newcommand{\argmax}{\mathrm{argmax}}
+\newcommand{\ST}{\mathrm{ST}}
+\newcommand{\prox}{\mathrm{prox}}
+
+\newtheorem*{theorem*}{定理}
+\newtheorem{theorem}{定理}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem*{proposition*}{Proposition}
+\newtheorem{remark}[theorem]{注}
+\newtheorem{example}[theorem]{例}
+\newtheorem*{remark*}{注}
+\newtheorem{lemma}[theorem]{補題}
+\newtheorem{assumption}[theorem]{仮定}
+\newtheorem{corollary}[theorem]{系}
+\newtheorem{definition}[theorem]{定義}
+\newtheorem*{definition*}{定義}
+
+\def\br{\hfill\break}
+\def\bold#1{\mbox{\boldmath $#1$}}
+
+%
+%file name = bflatex.tex
+%
+\def\0{\mbox{\bf 0}}
+\def\1{\mbox{\bf 1}}
+\def\2{\mbox{\bf 2}}
+\def\3{\mbox{\bf 3}}
+\def\4{\mbox{\bf 4}}
+\def\5{\mbox{\bf 5}}
+\def\6{\mbox{\bf 6}}
+\def\7{\mbox{\bf 7}}
+\def\8{\mbox{\bf 8}}
+\def\9{\mbox{\bf 9}}
+\def\a{\mbox{\boldmath $a$}}
+\def\b{\mbox{\boldmath $b$}}
+% curled charcter can be used by \chige{a}
+\let\chige\c
+
+\def\c{\mbox{\boldmath $c$}}
+
+% details are written in  /usr/share/texmf/tex/plain/base/plain.tex
+% \newdimen\zhige \zhige=0pt
+% \def\chige#1{{\setbox\zhige\hbox{#1}\ifdim\ht\zhige=1ex\accent24 #1%
+%  \else\ooalign{\unhbox\zhige\crcr\hidewidth\char24\hidewidth}\fi}}
+
+\def\cc{\mbox{\boldmath $c$}}
+\def\d{\mbox{\boldmath $d$}}
+\def\e{\mbox{\boldmath $e$}}
+\def\f{\mbox{\boldmath $f$}}
+\def\g{\mbox{\boldmath $g$}}
+\def\h{\mbox{\boldmath $h$}}
+\def\i{\mbox{\boldmath $i$}}
+\def\j{\mbox{\boldmath $j$}}
+\def\k{\mbox{\boldmath $k$}}
+\def\l{\mbox{\boldmath $l$}}
+\def\m{\mbox{\boldmath $m$}}
+\def\n{\mbox{\boldmath $n$}}
+\def\o{\mbox{\boldmath $o$}}
+\def\p{\mbox{\boldmath $p$}}
+\def\q{\mbox{\boldmath $q$}}
+\def\r{\mbox{\boldmath $r$}}
+\def\s{\mbox{\boldmath $s$}}
+\def\t{\mbox{\boldmath $t$}}
+\def\u{\mbox{\boldmath $u$}}
+\def\v{\mbox{\boldmath $v$}}
+\def\w{\mbox{\boldmath $w$}}
+\def\x{\mbox{\boldmath $x$}}
+\def\y{\mbox{\boldmath $y$}}
+\def\z{\mbox{\boldmath $z$}}
+\def\A{\mbox{\boldmath $A$}}
+\def\B{\mbox{\boldmath $B$}}
+\def\C{\mbox{\boldmath $C$}}
+\def\D{\mbox{\boldmath $D$}}
+\def\E{\mbox{\boldmath $E$}}
+\def\F{\mbox{\boldmath $F$}}
+\def\G{\mbox{\boldmath $G$}}
+\def\H{\mbox{\boldmath $H$}}
+\def\I{\mbox{\boldmath $I$}}
+\def\J{\mbox{\boldmath $J$}}
+\def\K{\mbox{\boldmath $K$}}
+\def\L{\mbox{\boldmath $L$}}
+\def\M{\mbox{\boldmath $M$}}
+\def\N{\mbox{\boldmath $N$}}
+\def\O{\mbox{\boldmath $O$}}
+\def\P{\mbox{\boldmath $P$}}
+\def\Q{\mbox{\boldmath $Q$}}
+\def\R{\mbox{\boldmath $R$}}
+\def\S{\mbox{\boldmath $S$}}
+\def\T{\mbox{\boldmath $T$}}
+\def\U{\mbox{\boldmath $U$}}
+\def\V{\mbox{\boldmath $V$}}
+\def\W{\mbox{\boldmath $W$}}
+\def\X{\mbox{\boldmath $X$}}
+\def\Y{\mbox{\boldmath $Y$}}
+\def\Z{\mbox{\boldmath $Z$}}
+\def\AC{\mbox{$\cal A$}}
+\def\BC{\mbox{$\cal B$}}
+\def\CC{\mbox{$\cal C$}}
+\def\DC{\mbox{$\cal D$}}
+\def\EC{\mbox{$\cal E$}}
+\def\FC{\mbox{$\cal F$}}
+\def\GC{\mbox{$\cal G$}}
+\def\HC{\mbox{$\cal H$}}
+\def\IC{\mbox{$\cal I$}}
+\def\JC{\mbox{$\cal J$}}
+\def\KC{\mbox{$\cal K$}}
+\def\LC{\mbox{$\cal L$}}
+\def\MC{\mbox{$\cal M$}}
+\def\NC{\mbox{$\cal N$}}
+\def\OC{\mbox{$\cal O$}}
+\def\PC{\mbox{$\cal P$}}
+\def\QC{\mbox{$\cal Q$}}
+\def\RC{\mbox{$\cal R$}}
+\def\SC{\mbox{$\cal S$}}
+\def\TC{\mbox{$\cal T$}}
+\def\UC{\mbox{$\cal U$}}
+\def\VC{\mbox{$\cal V$}}
+\def\WC{\mbox{$\cal W$}}
+\def\XC{\mbox{$\cal X$}}
+\def\YC{\mbox{$\cal Y$}}
+\def\ZC{\mbox{$\cal Z$}}
+
+\def\Real{\mbox{$\mathbb{R}$}}
+\def\Complex{\mbox{$\mathbb{C}$}}
+\def\SMAT{\mbox{$\mathbb{S}$}}
+\def\Integer{\mbox{$\mathbb{Z}$}}
+\def\Natural{\mbox{$\mathbb{N}$}}
+\def\ascript{\mbox{\scriptsize $\a$}}
+\def\blambda{\mbox{\boldmath $\lambda$}}
+\def\etab{\mbox{\boldmath $\eta$}}
+\def\balpha{\mbox{\boldmath $\alpha$}}
+\def\bbeta{\mbox{\boldmath $\beta$}}
+\def\bzeta{\mbox{\boldmath $\zeta$}}
+\def\bmu{\mbox{\boldmath $\mu$}}
+
+\newcommand{\oz}{\overline{z}}
+\newcommand{\oc}{\overline{\c}}
+\newcommand{\ob}{\overline{\b}}
+\newcommand{\cO}{\mathcal{O}}
+\title{{\large 令和4年度　学士論文}\\ \vskip\baselineskip
+taitoru\\タイトル}
+\author{東京工業大学　情報理工学院　数理・計算科学系\\
+学籍番号　19B31048\\
+脇田康平\\
+指導教員 山下 真 教授\\
+}
+\date{2022年2月27日}
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\clearpage
+
+\section{はじめに}\label{sec:introduction}
+% 研究の大まかな内容
+% 研究の意義
+% 論文の構成
+
+本論文の構成は以下である。
+第\ref{sec:preliminaries}節では、二次錐計画問題(SOCP)に関する前提知識として二次錐計画問題と内点法アルゴリズム、中心パスなどについて説明をする。
+第\ref{sec:Deformation_relax_and_penalty}節では、緩和法とペナルティ法に基づく変形について説明する。
+第\ref{sec:Numerical_Experience}節では、数値実験を行った結果を示し、各手法の評価を行う。
+第\ref{sec:Conclusion}節で、まとめを行う。
+
+\subsection{記法}\label{sec:notation}
+
+
+この論文で扱う記法を述べる。
+\begin{itemize}
+  \item $\|\cdot\|$はユークリッドノルムとする。
+  \item 行列$\A \in \Real^{k \times m} , \B \in \Real^{k \times n}$を横方向につなげてできる新たな行列$\C \in \Real^{k \times (m+n)}$を
+  $ \C = (\A, \B)$ と表記する。
+  \item 行列$\A \in \Real^{m \times k} , \B \in \Real^{n \times k}$を縦方向につなげてできる新たな行列$\C \in \Real^{(m+n) \times k}$を
+$    \C = (\A ; \B)$ と表記する。
+  \item 上付き添え字 $T$ は行列やベクトルの転置を示す。
+  \item $\x^T \y$はベクトル$\x,\y \in \Real^n$の内積$\sum_{i=1}^n x_i y_i$である。
+  \item ２つのベクトル$\x , \y \in \Real^n$に対して、$\x \circ \y$を次のように定義する。\\
+$\x \circ \y = \left(
+  \begin{array}{c}
+    \x^T \y \\
+    x_0 y_1 + y_0 x_1 \\
+    \vdots \\
+    x_0 y_n + y_0 x_n
+  \end{array} \right)
+  $
+  \item ２つの行列$\A , \B$に対して$\A \oplus \B =
+  \begin{pmatrix}
+    \A & \0 \\
+    \0 & \B \\
+  \end{pmatrix}$
+  \item $n$次元のベクトル$\e \in \Real^n$かつ、$1$番目の要素のみが$1$で、その他の要素は全て$0$であるベクトルを$\e_n = (1 ; \0)$と表す。
+  \item 対角成分以外は0で、対角成分は1行目が$1$,それ以外が$-1$である行列を$\R_n \in \Real^{n \times n}$とする。
+  $
+  \R_n =
+  \begin{pmatrix}
+    1 & 0 & \cdots & 0 \\
+    0 & -1 & \cdots & 0 \\
+    \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & \cdots & -1 \\
+  \end{pmatrix}
+  $
+\end{itemize}
+
+\clearpage
+
+\section{前提知識}\label{sec:preliminaries}
+
+この章では、MISOCPとヒューリスティクスに関する前提知識について述べる。
+
+\subsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming}
+
+\subsubsection{二次錐計画問題}\label{sec:Second_Order_Cone_Programming:standard_formulation}
+% 連続変数の二次錐計画問題について
+% 定義・主問題・双対問題・今回使う形での定式化
+本論文で扱うSOCPの標準形は、以下のように定義され、これを主問題と呼ぶ。
+\begin{align}
+  \begin{array}{cclc}
+		\min & : & \c_1^T \x_1 + \dots + \c_m^T \x_m \\
+		\text{subject to} & : & \A_1 \x_1 + \dots + \A_m \x_m = \b \\
+		& & \x_i \in \KC_i \ (\text{for} \ i = 1, \dots , m)
+  \end{array}
+  \tag{$\PC$}
+  \label{al:2:1}
+\end{align}
+ここで、$i = 1, \dots , m$に対して$ \A_i \in \Real^{n \times n_i} , \b \in \Real^n , \c_i \in \Real^{n_i}$が定数で$\x_i \in \Real^{n_i}$が変数である。
+また、$\KC_i$は$n_i$次元の二次錐である。
+また、$\eqref{al:2:1}$において、$\e = (\e_{n_1}, \dots, \e_{n_m})$, $\R = \R_{n_1} \oplus \cdots \oplus \R_{n_m}$とする。
+
+一般的に$n$次元の二次錐$\KC \subset \Real^n$は、以下で定義される。
+\begin{align}
+	\KC = \left\{ \x = \left(
+	\begin{array}{c}
+		x_0 \\
+		\x_1
+	\end{array}
+	\right) \
+	\middle| \ x_0 \in \Real, \x_1 \in \Real^{n-1},  x_0 \ge \|\x_1\| \right\}
+\end{align}
+
+二次錐 $\KC$ に対して、境界と内部は次のように定義される。
+\begin{align}
+	\text{int} \ \KC = \{ \x \in \KC \mid x_0 > \|\x_1\| \}, \quad
+	\text{bd} \ \KC = \{ \x \in \KC \mid x_0 = \|\x_1\| \}
+\end{align}
+
+\eqref{al:2:1}に対し、$\x$が等式制約$\A_1 \x_1 + \dots + \A_m \x_m = \b$および
+$\x_i \in \KC_i \ (\text{for} \ \ i = 1, \dots , m)$
+を満たすとき実行可能解と呼ぶ。
+さらに実行可能解であり内部に存在する ($\x_i \in \text{int} \ \KC_i$ for $i=1,\dots,m$)とき、
+実行可能内点と呼ぶ。
+
+\eqref{al:2:1}を主問題とするとき、対応する双対問題は以下の形式で与えられる。
+\begin{align}
+\begin{array}{rcl}
+\max & : & \b^T \y \\
+    \text{subject to} & : & \A_i^T \y + \z_i =  \c_i \ (\text{for} \ \ i = 1, \dots , m) \\
+     & & \z_i \in \KC_i \ (\text{for} \ \ i = 1, \dots , m)
+\end{array}
+\tag{$\DC$}
+\label{al:2:2}
+\end{align}
+
+主問題と同様に、\eqref{al:2:2}に対して$(\y,\z)$が等式制約$\A_i^T \y + \z_i =  \c_i, \z_i \in \KC_i \
+(\text{for} \ i= 1, \dots , m)$を満たすとき実行可能解と呼び、
+さらに$\z_i \in \text{int} \ \KC_i \ (\text{for} \ i = 1, \dots , m)$
+を満たすとき実行可能内点と呼ぶ。
+
+\subsubsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming:application}
+
+% 混合整数の場合の定式化
+% 混合整数の場合、内点法などのSOCで使えるアルゴが使用できないことを説明
+線形計画問題(LP)は多くの実用上の応用問題を定式化可能であるが、
+SOCPはLPを含むさらに大きな問題のクラスである。
+この包含関係を見るために、
+以下の標準形で与えられるLPがSOCPで定式化できることを示す。
+
+\begin{align}
+  \begin{array}{rcl}
+    \min & : & \sum_{i=1}^{m} c_i x_i \\
+    \text{subject to} & : & \sum_{i=1}^m \a_i x_i = \b \\
+    & & x_i \ge 0 \ (i = 1, \dots , m)
+  \end{array}
+\end{align}
+
+ここで、$c_i \in \Real \ (i = 1 , \dots , m) , \a_i \in \Real^{n_i} \ (i = 1 , \dots , m)$が定数で$x_i \in \Real \ (i = 1 , \dots , m)$が変数である。
+特に、各変数は非負制約が課されている。
+一方でSOCPにおける二次錐制約は
+\begin{align}
+  x_0 \ge \|\x_1\| \ , \ \x_1 \in \Real^{n-1}
+\end{align}
+であるが、ここで $n=1$の場合、つまり$1$次元の二次錐を考えると右辺の$\|\x_1\|$が
+$0$であり、$x_0 \ge 0$ となり実質的に非負制約である。
+したがって、LPにおける非負制約を$1$次元の二次錐として捉えることで、
+一般にLPはSOCPは帰着可能である。
+
+%二次錐制約が１次元と２次元の場合について考えると、制約はそれぞれ
+%\begin{align}
+%  x_0 \ge 0 \ , \ x_0 \ge |x_1|
+%\end{align}
+%となる。$x_0 \ge |x_1|$は$x_0 \ge x_1 (x_1 \ge 0) \ , \ - x_0 < x_1 (x_1 < 0)$に分けられる。
+%\begin{align}
+%  (x_0 , x_1) \rightarrow (\frac{x_0 - x_1}{\sqrt2} , \frac{x_0 + x_1}{\sqrt2})
+%  \label{transform:LP_to_SOCP}
+%\end{align}
+%という変形をすることで、二次元平面で時計回りに$45^\circ$回転させると、非負制約に変形できる。したがって、あるSOCPに対して\eqref{transform:LP_to_SOCP}の変形をすることで、1または2次元の二次錐に関する制約は全て非負制約に変形することができる。
+%（以下の文章は数学的な意味が良く分からないので削除しました。）
+%以上を踏まえると、一般的な$n$次元の二次錐制約は、
+%同様に、\eqref{transform:LP_to_SOCP}と逆の変形をすることでLPをSOCPに変形することもできる。
+%
+%一方で、３次元以上のSOCPについては、二次錐制約$x_0 \ge \|\x_1\|$の両辺を二乗することで
+%高々二次制約式となる。二次制約式は、一次制約式を含む。よって、$n \ge 3$の場合もLPを含む。
+%したがって、SOCPはLPを含むことがわかる。
+
+%ここからはSOCPについて述べる。SOCPは理学・工学の幅広い分野へと応用されている。
+%ここでは、その数例を紹介する。
+第\ref{sec:introduction}節でも触れたとおりSOCPは理学・工学の幅広い分野へと応用されているが、
+その数例をここで紹介する。
+
+\begin{enumerate}[具体例1) :] \upshape
+	\item \underline{ノルム最小化問題}
+
+  ノルム最小化問題は次のように定式化される。
+  \begin{align}
+    \begin{array}{rclc}
+      \min & : & \sum_{i=1}^{n} \|\overline{\v}_i\| & \\
+      \text{subject to} & : &  \A_i \x + \b_i = \overline{\v}_i & (i = 1, \dots , n)\\
+    \end{array}
+  \end{align}
+  このままだと、二次錐制約が入っておらず、SOCPの形になっていない。そこで、$\v_i = (v_{i0} ; \overline{\v}_i)$とし、
+  $n$次元の二次錐$\KC$に対して、$\v_i \in \KC \ (i = 1, \dots , n)$をいう制約を追加することで、$v_{i0} \ge \sum_{i=1}^{n} \|\overline{\v}_i\|$より、目的関数$\sum_{i=1}^{n} v_{i0}$を最小化する次のSOCPに変形することができる。
+  \begin{align}
+    \begin{array}{rclc}
+      \min & : & \sum_{i=1}^{n} v_{i0} & \\
+      \text{subject to} & : & \A_i \x + \b_i = \overline{\v}_i & (i = 1, \dots , n)\\
+      & & \v_i \in \KC & (i = 1, \dots , n)
+    \end{array}
+  \end{align}
+  この問題は、インパルス性雑音除去のためのネットワーク最適化問題や、シュタイナー木問題、最適位置問題などを解く際に用いられる~\cite{lobo1998applications}。
+  \item \underline{最大ノルム最小化問題}
+
+  最大ノルム最小化問題は次のように定式化される。
+  \begin{align}
+    \begin{array}{rclc}
+      \min & : & \underset{i = 1, \dots , m}{\max} \|v_i\|  & \\
+      \text{subject to} & : & \A_i \x + \b_i = \v_i & (i = 1, \dots , n)
+    \end{array}
+  \end{align}
+  ここで、$t$を全ての$i$に対して$t \ge \|v_i\|$を満たす変数とおくと、この問題は$t$の値を最小化する問題と等しい。よって、次のようなSOCPに変形できる。
+  \begin{align}
+    \begin{array}{rclc}
+      \min & : & t & \\
+      \text{subject to} & : & \A_i \x + \b_i = \v_i & (i = 1, \dots , n)\\
+      & & (t;\v_i) \in \KC  &  (i = 1, \dots , n)
+    \end{array}
+  \end{align}
+  この問題は、平面状における全方向性アンテナの感度の最小化問題や、周波数近似フィルタの誤差の最小化問題などを解く際に用いられる~\cite{lobo1998applications}。
+\end{enumerate}
+
+\subsection{branch-and-cut}\label{sec:cone-property}
+% ソルバーはおそらくbranch-and-cutをベースにしている。
+% アルゴリズムを記述する。
+% 厳密解を効率的に求められることを説明
+二次錐$\KC$の重要な性質として、自己双対錐であることが挙げられる。
+つまり、双対錐を
+\begin{align}
+	\KC^* := \{ \z \mid \x^T \z \ge 0 \ \text{for} \ \x \in \KC \}\label{eq:dual-cone}
+\end{align}
+により定義したときに、以下の定理が成り立つ。
+
+\begin{theorem}\label{theorem:cone-property}
+	$\KC^* = \KC$ が成り立つ。
+\end{theorem}
+
+\begin{proof}
+	$\z \in \KC$ならば、$z_0 \ge \|\z_1\|$より、$\x \in \KC$に対して
+  \begin{align}
+    \x^T \z = z_0 x_0 + \z_1^T \x_1 \ge z_0 x_0 - \|\z_1\| \|\x_1\| \ge 0
+  \end{align}
+  %となるので$\z \in \KC^*$が成り立つ。つまり$\KC \subset \KC^*$が成り立つ。
+  となり、$\z \in \KC^*$が示される。つまり$\KC \subset \KC^*$が成り立つ。
+
+  逆に$\z \in \KC^*$ならば、$\x \in \KC$に対して$\x^T \z \ge 0$であることから
+  %逆に$\z \in \KC^*$ならば、$\x \in \KC$に対して$\x^T \z \ge 0$なので、
+  $x_0 = 1 , \x_1 = \0$とすれば
+  \begin{align}
+    \x^T \z = z_0 x_0 + \z_1^T \x_1 = z_0 \ge 0
+  \end{align}
+  がわかる。さらに、$x_0 = z_0 , \x_1 = - \z_1$とすれば
+  \begin{align}
+    \x^T \z = z_0 x_0 + \z_1^T \x_1 = z_0^2 - \|\z_1\|^2 \ge 0
+  \end{align}
+  %となるので$\z \in \KC$が成り立つ。つまり$\KC^* \subset \KC$が成り立つ。したがって$\KC = \KC^*$が成り立つ。
+  となり$\z \in \KC$となる。つまり$\KC^* \subset \KC$が成り立つ。したがって$\KC = \KC^*$を得る。
+\end{proof}
+
+この定理から、以下の系~\ref{corollary:cone-property}が導出される。
+この系~\ref{corollary:cone-property}は弱双対定理の証明に利用される。
+
+\begin{corollary}\label{corollary:cone-property}
+	$\x \in \KC, \z \in \KC$ であれば、$\x^T \z \ge 0$ である。
+\end{corollary}
+\begin{proof}
+	定理~\ref{theorem:cone-property}より、$\z \in \KC $ から
+	$\z \in \KC^*$ である。
+	したがって、$\x \in \KC$ と $\KC^*$ の定義から $\x^T \z \ge 0$ である。
+\end{proof}
+
+\subsection{焼きなまし法}\label{sec:Second_Order_Cone_Programming:property}
+多くの既存研究において、\eqref{al:2:1}, \eqref{al:2:2}に対して以下の仮定を置いている。
+% subsubsectionでヒューリスティックについて軽く説明
+\subsubsection{ヒューリスティック}
+\subsubsection{焼きなまし法}
+% 現実的な時間で解を求める手法の一つとして焼きなまし法を紹介する。
+\begin{assumption}\label{assumption:SOCP}
+
+\begin{enumerate}[(i)] \upshape
+	\item 行列$\A = (\A_1 , \A_2 , \dots , \A_m)$の行ベクトルは線形独立である。\label{assumption1}
+	\item 主問題\eqref{al:2:1}と双対問題\eqref{al:2:2}のそれぞれの実行可能領域は
+	空集合ではない。\label{assumption2}
+\end{enumerate}
+
+\end{assumption}
+
+仮定(\ref{assumption1})は、
+探索方向を求める際の線形方程式\eqref{eq:gauss3}
+が解を持つために必要な条件である。
+ただし、仮定(\ref{assumption1})が満たされない場合でも、
+主問題 \eqref{al:2:1} の制約を
+線形方程式系とみなしてガウスの消去法により冗長な制約を削除することにより、
+一般性を失うことなく仮定(\ref{assumption1})を仮定することが可能である。
+仮定(\ref{assumption2})は、実行可能領域が空集合ならば、最適解のなす集合も空集合である。
+数値実験の際に安定して内点法で解を求める事ができるためにも必要である。
+本論文でも、仮定(\ref{assumption1})および仮定(\ref{assumption2})を仮定する。
+
+SOCPにおける理論的な性質として、\eqref{al:2:1}と\eqref{al:2:2}の関係性は重要である。
+まず最初の性質として、主問題の目的関数値は双対問題の目的関数値の上界となっており、
+同様に双対問題の目的関数値は主問題の目的関数値の下界である。
+このことは、以下の弱双対定理によって示される。
+
+\begin{theorem}[弱双対定理]\label{theorem:weak-duality}
+$\x = (\x_1; \dots ; \x_m)$を\eqref{al:2:1}の任意の実行可能解、$(\y,\z)$ただし$\z = (\z_1; \dots ; \z_m)$を\eqref{al:2:2}の任意の実行可能解とする。このとき、以下が成り立つ。
+  \begin{align}
+    \sum_{i=1}^m \c_i^T \x_i - \b^T \y = \sum_{i=1}^m \z_i^T \x_i \ge 0
+  \end{align}
+\end{theorem}
+
+\begin{proof}
+\eqref{al:2:1}の制約から$\sum_{i=1}^m \A_i \x_i = \b$であり、
+\eqref{al:2:2}の制約から$\A_i^T \y + \z_i = \c_i \ (\text{for} \ i = 1, \dots , m)$であることから
+\begin{equation}
+\sum_{i=1}^m \c_i^T \x_i - \b^T \y = \sum_{i=1}^m (\A_i^T \y + \z_i)^T \x_i - \b^T \y
+= \y^T \b + \sum_{i=1}^m \z_i^T \x_i - \b^T \y = \sum_{i=1}^m \z_i^T \x_i
+\end{equation}
+である。
+ここで、系~\ref{corollary:cone-property} より
+$\x_i \in \KC_i, \z_i \in \KC_i$ から $\z_i^T \x_i \ge 0$ より $\sum_{i=1}^m \z_i^T \x_i \ge 0$ である。
+%コーシー・シュワルツの不等式より$\z_1 \x_1 \ge - \|\z_1\| \|\x_1\|$なので
+%  \begin{align}
+%    \z^T \x = z_0 x_0 + \z_1^T \x_1 \ge z_0 x_0 - \|\z_1\| \|\x_1\|
+%  \end{align}
+%  さらに、二次錐制約 $\x \in \KC, \z \in \KC$ より、
+%  \begin{align}
+%    \z^T \x \ge z_0 x_0 - \|\z_1\| \|\x_1\| > 0
+%  \end{align}
+\end{proof}
+
+ここで、$\sum_{i=1}^m \x_i^T \z_i$ は双対ギャップと呼ばれ、正の値となることもあるが、
+内点の仮定を置くと双対ギャップが$0$になることが知られている。これは、次の定理から示される。
+
+\begin{theorem}[強双対定理~\cite{alizadeh2001second}]\label{theorem:strong-duality}
+\textup{\eqref{al:2:1},\eqref{al:2:2}}がそれぞれ実行可能内点を持つとき、
+それぞれの問題に最適解$(\x^*) = (\x_1^* ; \dots ; \x_m^*)\text{と}(\y^*,\z^*)$ただし$\z^* = (\z_1^* ; \dots ; \z_m^*)$が存在して、それらの最適値は一致する。つまり、次の式が成り立つ。
+\begin{align}
+\sum_{i=1}^m \c_i^T \x_i^* = \b^T \y^* \ \ (i.e. \ \ \sum_{i=1}^m {\z_i^*}^T \x_i^* = 0)
+\end{align}
+\end{theorem}
+
+\section{問題設定と定式化}\label{sec:Deformation_relax_and_penalty}
+
+前節でみたように内点の存在は内点法の計算で重要であるが、
+電力潮流問題~\cite{cao2018study}などでは実際に内点を持たないSOCPが現れる。
+そこで、内点がないという制約付きの二次錐計画問題を数値的に安定して求解可能とする方法について考える。
+
+\subsection{内点なし制約付き二次錐計画問題}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
+
+内点を持たないSOCPに対する主双対内点法の数値的安定性を数値実験で比較するために、この小節では、そのような内点を持たないSOCPの生成方法を検討する。
+
+まず、以下のSOCPを考える。
+\begin{align}
+	\begin{array}{rcl}
+		\min & : & \f^T \x \\
+		\text{subject to} & : & \c_i^T \x + d_i \ge \|\A_i \x + \b_i\|
+		\ (i=1, \ldots, m) \\
+		& & \F \x = \g
+	\end{array}
+\end{align}
+ここで、$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^{n}, \c_i \in \Real^{n_i}, d_i \in \Real, \f \in \Real^{n_i} , \F \in \Real^{p \times n_i}, \g \in \Real^p$
+が定数であり、$\x \in \Real^{n_i}$が決定変数である。
+この問題は、不等式制約が
+\begin{align}
+  \left(
+  \begin{array}{c}
+    \c_i^T \x + d_i \\
+    \A_i \x + \b_i
+  \end{array}
+  \right) = \left(
+  \begin{array}{c}
+    \c_i^T \\
+    \A_i
+  \end{array}
+  \right) \x + \left(
+  \begin{array}{c}
+    d_i \\
+    \b_i
+  \end{array}
+  \right) \in \KC
+\end{align}
+と等しいので、\eqref{al:2:1}で出ている二次錐制約に変形することができることからSOCPである。
+特に、$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^{n},
+\c_i \in \Real^{n_i}, \F \in \Real^{p \times n_i}$と、ある$\overline{\x} \in \Real^{n_i}$に対して
+\begin{align}
+  d_i &= \|\A_i \overline{\x} + \b_i\| - \c_i^T \overline{\x} + 1 \\
+  \g &= \F \overline{\x}
+\end{align}
+のようにデータを入力することで、実行可能な内点が存在する問題を生成することが可能である。
+
+この問題を変形することで、実行可能内点が存在しないようなSOCPを生成する。
+具体的には、
+$\overline{m}$本の二次錐制約と$\overline{m}$本の等式制約を付け加えた以下のようなSOCP
+を考える。
+\begin{align}
+	\begin{array}{rcl}
+		\min & : & \f^T \x \\
+		\text{subject to} & : & \c_i^T \x + d_i \ge \|\A_i \x + \b_i\|
+		\ (i=1, \ldots, m) \\
+		& & \overline{\c}_i^T \x + \overline{d}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
+		\ (i=1, \ldots, \overline{m}) \\
+		& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
+    -
+    (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
+		& & \F \x = \g
+	\end{array}
+  \tag{$\PC_o$}
+  \label{NoinnerpointSOCP}
+\end{align}
+
+この問題\eqref{NoinnerpointSOCP}において$\overline{d}_i$は、
+$\overline{\A}_i \in \Real^{n \times n_i},
+\overline{\b}_i \in \Real^{n}, \overline{\c}_i \in \Real^{n_i}, \overline{\x} \in \Real^{n_i}$に対して
+\begin{align}
+  \overline{d}_i = - \overline{\c}_i^T \overline{x} + \| \overline{\A}_i \overline{\x} + \overline{\b}_i \|
+\end{align}
+を満たすように設定する。
+
+このとき、
+\begin{align}
+  \left(
+  \begin{array}{c}
+    \overline{\c}_i^T \\
+    \overline{\A}_i
+  \end{array}
+  \right) \overline{\x} + \left(
+  \begin{array}{c}
+    \overline{d}_i \\
+    \overline{\b}_i
+  \end{array}
+  \right)
+  \notin \text{int} \ \KC \ , \
+  \left(
+  \begin{array}{c}
+    \overline{\c}_i^T \\
+    \overline{\A}_i
+  \end{array}
+  \right) \overline{\x} + \left(
+  \begin{array}{c}
+    \overline{d}_i \\
+    \overline{\b}_i
+  \end{array}
+  \right) \in \text{bd} \ \KC
+\end{align}
+である。さらに
+\begin{align}
+  \HC = \{ \x \mid (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
+  -
+  (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0\}
+\end{align}
+とすると、$\KC \cap \HC \subset \text{bd} \ \KC$が成り立つ。よって、この問題は実行可能内点を持たないことがわかる。
+
+このSOCPは、第\ref{sec:Second_Order_Cone_Programming:solution}節で議論したように内点法で解こうとすると数値的に不安定になりやすく、これを解消する必要がある。
+解消する方法として、本論文ではペナルティ法~\cite{benson2007exact},~\cite{fukuda2012differentiable}と緩和法~\cite{liu2020globally}を検討する。
+
+\subsection{ペナルティ法による変形方法}\label{sec:Deformation_penalty}
+この方法では、\eqref{NoinnerpointSOCP}の二次錐制約に対して、ペナルティ係数$\xi_i$を加えることで不等式制約を緩めることを考える。
+一方で、ペナルティ項を目的関数に追加して、ペナルティも最小化することで
+\eqref{NoinnerpointSOCP}になるべく近い解を求めるように問題を変形する。
+
+具体的には、
+$\c_i^T \x + d_i \ge \|\A_i \x + \b_i\| $と$
+\overline{\c}_i^T \x + \overline{d}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
+$ の制約を、それぞれ
+$\xi_i \ge 0$と$\overline{\xi}_i \ge 0$ を入れることで緩和する。
+さらに、$\xi_i, \overline{\xi}_i$ ができるだけ$0$に近づけるように目的関数に
+ペナルティ項を追加する。
+つまり、以下の問題の求解を行う。
+\begin{align}
+	\begin{array}{rcl}
+		\min & : & \f^T \x + \sum_{i=1}^{m} P_i \xi_i + \sum_{i=1}^{\overline{m}} \overline{P}_i \overline{\xi}_i \\
+		\text{subject to} & : & \c_i^T \x + d_i+\xi_i \ge \|\A_i \x + \b_i\|
+		\ (i=1, \ldots, m) \\
+		& & \overline{\c}_i^T \x + \overline{d}_i + \overline{\xi}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
+		\ (i=1, \ldots, \overline{m}) \\
+		& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
+    -
+    (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
+		& & \F \x = \g \\
+		& & \xi_i \geq 0 \ (i=1, \ldots, m), \ \overline{\xi}_i \geq 0 \ (i=1, \ldots, \overline{m})
+	\end{array}
+  \tag{$\PC_p$}
+  \label{NoinnerpointSOCP:penalty}
+\end{align}
+ここで、$P_1, \ldots, P_m , \overline{P}_1, \ldots, \overline{P}_{\overline{m}}$ はペナルティの重みで、
+十分大きな正の値とする。
+入力データにもよるが、各データを $[0,1]$ 区間で乱数で生成した場合には、大体の目安として$10^3$ や $10^4$ などの値が入る。
+
+このペナルティ法は、新たなペナルティ項を追加したことで実行可能領域が広がるため、
+必ず実行可能内点を持つという性質を持つ。
+具体的には、$\xi_i , \overline{\xi}_i$を
+\begin{align}
+  \xi_i \ge \|\A_i \overline{\x} + \b_i \| - (\c_i^T \overline{\x} + \d_i) + 1 \ , \
+	\overline{\xi}_i \ge \|\overline{\A}_i \overline{\x} + \overline{\b}_i \| - (\overline{\c}_i^T \overline{\x} + \overline{\d}_i) + 1
+\end{align}
+を満たすようにとる。すると、$\x = \overline{\x}$は、不等式制約
+\begin{align}
+  \c_i^T \x + d_i+\xi_i > \|\A_i \x + \b_i\|
+  \ (i=1, \ldots, m) ,
+  & & \overline{\c}_i^T \x + \overline{d}_i + \overline{\xi}_i > \| \overline{\A}_i \x + \overline{\b}_i\|
+  \ (i=1, \ldots, \overline{m})
+\end{align}
+を満たしているので$\overline{\x}$は内点であり、かつ等式制約
+$\F \x = \g$および$(\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
+-
+(\overline{\A}_i \overline{\x} + \overline{\b}_i)(\overline{\A}_i \x + \overline{\b}_i) = 0$を満たしているので実行可能でもある。
+よって、実際に\eqref{NoinnerpointSOCP:penalty}の実行可能内点として
+$\overline{\x}$をとることができる。
+この効果によって、内点法で安定して解くことができると期待できる。
+
+\subsection{緩和法による変形方法}\label{sec:Deformation_relax}
+緩和法は、
+内点を持たないような不等式制約に着目して、不等式制約を等式制約と錐制約に分解することで、数値的に安定して求解しようとする方法である。
+例えば、各反復で錐制約については内点である必要があるが、
+infeasible interior-point method では
+等式制約については必ずしも厳密に満たさなくても探索方向の計算が可能である。
+具体的には、\eqref{NoinnerpointSOCP}の二次錐の制約に関して、新しく変数を入れることで
+等式制約と二次錐 $\KC = \left\{ \z = \begin{pmatrix}
+z_0 \\ \z_1  \end{pmatrix}: z_0 \ge \|\z_1\| \right\}$ に分解する。
+実際には、
+\begin{align}
+  \begin{pmatrix}
+  \c_i^T \x + d_i \\  \A_i \x + \b_i
+\end{pmatrix} \in \KC
+\end{align}
+で表現されている二次錐制約に対して、
+新しい変数$\y_i$を導入し
+等式制約と二次錐制約に分ける。
+\begin{align}
+	\begin{pmatrix}
+		\c_i^T \x + d_i \\  \A_i \x + \b_i
+	\end{pmatrix} \in \KC
+\ \iff \
+  \y_i = \begin{pmatrix}
+  \c_i^T \x + d_i \\  \A_i \x + \b_i
+\end{pmatrix}, \ \y_i \in \KC
+\end{align}
+これによって、数値誤差が等式制約
+$\y_i = \begin{pmatrix}
+\c_i^T \x + d_i \\  \A_i \x + \b_i
+\end{pmatrix}$
+の部分に出るようになるので、安定して解くことができるようになると期待できる。
+したがって、解く問題は以下のようになる。
+\begin{align}
+  \begin{array}{rcl}
+    \min & : & \f^T \x \\
+    \text{subject to} & : & \y_i = \begin{pmatrix}
+    \c_i^T \x + d_i \\  \A_i \x + \b_i
+  \end{pmatrix}
+  \ (i=1, \ldots, m) \\
+  & & \overline{\y}_i = \begin{pmatrix}
+  \overline{\c}_i^T \x + \overline{d}_i \\  \overline{\A}_i \x + \overline{\b}_i
+\end{pmatrix}
+\ (i=1, \ldots, \overline{m}) \\
+& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
+-
+(\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
+& & \F \x = \g \\
+& & \y_i \ (i=1, \ldots, m), \ \overline{\y}_i \ (i=1, \ldots, \overline{m}) \in \KC
+\end{array}
+\tag{$\PC_r$}
+\label{NoinnerpointSOCP:relax}
+\end{align}
+
+この緩和法では、数値誤差の影響が錐$(\KC)$から等式条件のほうに強くなるため、
+数値的には安定して解きやすくなる。
+しかし、追加する変数や制約の数が多くなってしまう。
+例えば、元の問題\eqref{NoinnerpointSOCP}の制約の本数が$m + 2 \overline{m} + 1$本であるのに対して、
+この問題\eqref{NoinnerpointSOCP:penalty}の制約の本数は$2 m + 3 \overline{m} + 1$本である。
+変数は、元の問題\eqref{NoinnerpointSOCP}の制約の本数が$m$本であるのに対して、
+この問題\eqref{NoinnerpointSOCP:penalty}の制約の本数は$n + m\sum_{i=1}^m(n_i + 1) + \overline{m} \sum_{i=1}^{\overline{m}} (n_i + 1)$本である。
+これからわかるように、$n_i$の数値が大きいほど、サイズが大きい場合に変数の数が急激に多くなり、計算に必要な変数と制約の数が他の2手法に比べてかなり多くなる。
+このため、最適解の求解に要する時間が増えてしまうというデメリットもある。
+
+\clearpage
+
+\section{焼きなまし法を用いた解法}\label{sec:SimulatedAnnealing}
+%aa
+\section{数値実験}\label{sec:Numerical_Experience}
+この節では、前節で導入した
+\eqref{NoinnerpointSOCP},\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}
+の3つのモデルで内点のないSOCPを求解し、数値的に比較を行う。
+ここでは、SOCPを解くソルバーとして
+SDPT3-4.0~\cite{toh2012implementation}を用いた。
+詳しい数値実験の実行環境は表\ref{table:Execution_environment}の通りである。
+\begin{table}[hbtp]
+  \caption{実行環境}
+  \label{table:Execution_environment}
+  \centering
+  \begin{tabular}{|c|c|}
+    \hline
+    プロセッサ  & 1.6 GHz デュアルコアIntel Core i5 \\
+    \hline
+    メモリ  & 8 GB 2133 MHz LPDDR3 \\
+    \hline
+    OS  & macOS Big Sur バージョン11.6 \\
+    \hline
+    実装言語  &  MATLAB\_R2021b \\
+    \hline
+    ソルバー & SDPT3-4.0 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection{ソルバーの入力標準形への変形方法}\label{sec:Deformation_to_SDPT3solver}
+今回使用したSDPT3では、次のような形式が入力形式であるため、この形式に沿うように入力をする必要がある
+%\modify{。~\cite{toh2012implementation}。}{
+\cite{toh2012implementation}。
+%}
+\begin{align}
+  \begin{array}{rcll}
+    \min & : & \displaystyle{\sum_{j=1}^{n_s}} \left[
+    \langle c_j^s , x_j^s \rangle - v_j^s \text{log det}  (x_j^s)
+     \right] & + \ \displaystyle{\sum_{i=1}^{n_q}} \left[
+     \langle c_i^q , x_i^q \rangle - v_i^q \text{log det}  (x_i^q)
+      \right] \\
+      & & + \langle c^l , x^l \rangle \ -
+      \ \displaystyle{\sum_{k=1}^{n_l}} v_k^l \text{log} x_k^l & + \ \langle
+       c^u , x^u \rangle \\
+    \text{subject to} & : & \displaystyle{\sum_{j=1}^{n_s}} A_j^s (x_j^s)　+ \ \displaystyle{\sum_{j=1}^{n_q}} A_j^q (x_j^q) & + \ A^l x^l + \ A^u x^u = b \\
+    & & x_j^s \in \KC_s^{s_j} \ \forall j \ , \ x_i^q \in \KC_q^{q_i} \ \forall i , & x^l \in \KC_l^{n_l} \ , \ x^u \in \Real^{n_u} \\
+  \end{array}
+\end{align}
+
+この問題に対応する双対問題は以下の問題である。
+\begin{align}
+  \begin{array}{rcll}
+    \min & : & \displaystyle{\sum_{j=1}^{n_s}} \left[
+    \langle c_j^s , x_j^s \rangle - v_j^s \text{log det}  (x_j^s)
+     \right] & + \ \displaystyle{\sum_{i=1}^{n_q}} \left[
+     \langle c_i^q , x_i^q \rangle - v_i^q \text{log det}  (x_i^q)
+      \right] \\
+      & & + \langle
+      c^l , x^l
+       \rangle \ - \ \displaystyle{\sum_{k=1}^{n_l}} v_k^l \text{log} x_k^l & + \ \langle
+       c^u , x^u \rangle \\
+  \end{array}\\
+  \begin{array}{lllllllll}
+    \text{subject to} & : & (A_j^s)^T y & + & z_j^s & = & c_j^s, & z_j^s \in \KC_s^{s_j} & (j = 1,...,n_s) \\
+    & & (A_i^q)^T y & + & z_i^q & = & c_i^q, & z_i^q \in \KC_q^{q_i} & (i = 1,...,n_q) \\
+    & & (A^l)^T y & + & z^l & = & c^l, & z^l \in \KC_l^{n_l} & \\
+    & & (A^u)^T y &   &     & = &  c^u, & y \in \Real^m & \\
+  \end{array}
+\end{align}
+
+ここで、$x = (x_1^s , \dots , x_{n_s}^s , x_1^q , \dots , x_{n_q}^q , x^l)$,
+ただし$x_1^s , \dots , x_{n_s}^s$は対称行列,
+$x_1^q , \dots , x_{n_q}^q , x^l$はベクトル
+%\modify{}{である}。
+である。
+
+一般に
+$K$を自己双対なユークリッド空間上の閉凸錐、$A:X \to \Real^m$を線形写像、
+$A^*$を$A$の随伴行列、$b \in \Real^m$、$c \in X$とする。
+これらを用いるとソルバーの入力標準形は、以下の形式で簡潔に表すこともできる。
+\begin{align}
+	\label{eq:SDPT3-input}
+  \begin{array}{rcc}
+    \min & : & \langle \c , \x \rangle \\
+    \text{subject to} & : & \x \in \KC \\
+    & & \A \x = \b
+  \end{array} & \quad
+  \begin{array}{rcc}
+    \max & : & \b^T \y \\
+    \text{subject to} & : & \z \in \KC \\
+    & & \A^* \y + \z = \c
+  \end{array}
+\end{align}
+
+今回のSOCP
+\eqref{NoinnerpointSOCP},\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}
+をソルバーに入力するするためには、上記の形に変形する必要がある。
+まず、目的関数に関しては内積以外を$0$に設定すれば良い。
+制約は、二次錐制約に関しては$z_i^q \in \KC_q^{q_i}$、
+不等式制約に関しては$z^l \in \KC_l^{n_l}$を用いる。%等式制約に関しては$y \in \Real^m$を使う。
+
+例えば、\eqref{NoinnerpointSOCP}を入力するためには、
+双対問題を対象として以下のように設定をする。
+まず、変数は全てSDPT3の$\y$で扱うこととし、$\y = \x$とする。
+次に、不等式制約は二次錐制約として対応させる。
+具体的には、不等式制約$\c_i^T \x + d_i \ge \|\A_i \x + \b_i\|$は
+\begin{align}
+  \begin{pmatrix}
+    - \c_i^T \\
+    - \A_i \\
+  \end{pmatrix}
+  \x + \z_i^q =
+  \begin{pmatrix}
+    d_i \\
+    \b_i \\
+  \end{pmatrix} , \z_i^q \in \KC_q^{q_i} \ (i = 1 , \dots , m)
+\end{align}
+の形に変形することで、$(A_i^q)^T y + z_i^q = c_i^q, z_i^q \in \KC_q^{q_i} (i = 1,...,n_q)$の二次錐制約に対応させる。
+また、等式制約$\F \x = \g$は
+$A^u = \F^T , c^u = \g_u$として
+\begin{align}
+  (A^u)^T y = c^u
+\end{align}
+の制約に対応させる。
+同様の手順により\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}も
+SDPT3に入力可能である。
+
+\subsection{初期点の設定と終了条件}\label{sec:parameter_settings}
+
+SDPT3は以下のような引数をとる。
+\begin{center}
+  \text{[obj,X,y,Z,info,runhist] = sqlp(blk,At,C,b,OPTIONS,X0,y0,Z0)}
+\end{center}
+ここで、blkはSOCPの錐を表すブロック構造のセル配列、
+At, C, b はSOCPの入力行列などを表す。また、
+OPTIONSはSDPT3が用いるパラメータであり、
+X0 , y0 , Z0は内点法の初期点を表す。
+
+今回の数値実験では、OPTIONS,X0,y0,Z0はSDPT3が設定するデフォルト値を用いた。
+特に、デフォルトの場合のy0の初期点は、次のように$(-1,1)$から発生する$n$次元正規分布乱数ベクトルで設定される。
+\begin{align}
+  y0 = \text{randn}(n,1)
+\end{align}
+
+得られた最適解の精度を評価するために、いくつかの定義を行う。まず、
+\begin{align}
+  \lambda_{\min,\KC} (\x) = \min \left\{ \underset{j=1,\cdots,n_s}{\min} \lambda_{\min} (x_j^s) , \underset{k=1,\cdots,n_q}{\min} \lambda_{\min,q} (x_k^q) , \underset{h}{\min} (x_h^l) \right\}
+\end{align}
+とする。ここで、あるベクトル$\a = (a_1 ; \overline{\a})$に対して
+$\lambda_{\min,q} (\a) = a_1 - \|\overline{\a}\|_2$,
+ある対称行列$\A$に対して$\lambda_{\min} (\A) = \A$の最小の固有値とする。
+また、ベクトル$\x = (x_1 , \cdots , x_n) , \z = (z_1 , \cdots , z_n) \in \Real^n$に対して、
+$\|\x\|_1 = \underset{i=1,\cdots,n}{\max} |x_i|$,
+$\langle \c,\x \rangle = \c^T \x$
+とする。
+これらを踏まえて、以下の6つを定義する。
+これらはDIMACS error~\cite{mittelmann2003independent}とも呼ばれる。
+\begin{align}
+			\text{error1} &= \frac{\|\A \x - \b\|}{1 + \|\b\|_1} &
+			\text{error2} &= \max \{ 0, - \frac{\lambda_{\min , \KC} (\x)}{1 + \|\b\|_1} \} \\
+			\text{error3} &= \frac{\|\A^* \y + \z - \c\|}{1 + \|\c\|_1} &
+			\text{error4} &= \max \{ 0, - \frac{\lambda_{\min , \KC} (\z)}{1 + \|\b\|_1} \} \\
+			\text{error5} &= \frac{\langle \c,\x \rangle - \b^T \y}{1 + \langle \c,\x \rangle + \b^T \y} &
+			\text{error6} &= \frac{\langle \x,\z \rangle}{1 + \langle \c,\x \rangle + \b^T \y}
+\end{align}
+これらのDimacs errorには、以下の性質があることが知られている。
+\begin{itemize}
+  \item error2とerror4は、得られた解のうち$\x , \z \in \KC$であるならば、ともに0をとる。
+  よって、得られた解の中で$\x,\z$が二次錐制約を満たしているかどうかは、error2とerror4の数値で確認することができる。
+  \item 得られた解のうち$\x , \z \in \KC$が実行可能な場合、厳密な計算式では
+  error5 $=$ error6となる。しかし、ソルバーで出力される解は数値誤差を含むので、必ずしも一致するとは限らない。
+  \item error5は双対ギャップを表しており、出力された解が厳密に実行可能解であれば弱双対定理より$0$以上である。しかし、数値誤差の影響により、error5は負の値となる可能性がある。
+\end{itemize}
+
+これらを用いると、閾値を$\epsilon>0$としたときの
+SDPT3の終了条件は以下のように示すことができる。
+\begin{center}
+  終了条件： \ $\max\{\text{error}1, \text{error}2, \dots, \text{error}6\} < \epsilon$
+\end{center}
+この条件を満たすまで、探索方向による計算を続け、条件を満たした時点で、その点を最適解として出力し、反復を終了する。
+なお、SDPT3では、デフォルトの閾値は$\epsilon = 10^{-8}$である。
+
+\subsection{テスト問題の生成方法}\label{sec:Problem_Generation}
+
+%\red{\eqref{NoinnerpointSOCP}の$\A, \b, \c$ などを乱数などでどう生成しているかが書かれていない。}
+
+生成する問題\eqref{NoinnerpointSOCP}については非有界であると
+数値誤差が非有界に起因するか内点がないことに起因するか判別が困難であるため、
+どの問題でも有界制約を追加し、必ず有界な問題となるように設定した。
+これにより、必ず最適解が存在するように問題を生成した。
+
+具体的には、まず$i = 1 , \dots , m-1$に対して
+$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^n, \c_i \in \Real^{n_i}$
+を正規分布からなる乱数を要素に持つ変数として設定する。MATLABでは以下のように設定する。
+$\overline{x} = \text{randn} (n,1) \in \Real^n$に対しては
+\begin{align}
+  A\{i\} &= \text{randn}(n\_i,n) , b\{i\} = \text{randn}(n\_i,1) ,
+  c\{i\} = \text{randn}(n,1) , \\
+  d\{i\} &= -c\{i\}' \overline{x} + \text{norm}(A\{i\}' \overline{x}+b\{i\}) + 10
+\end{align}
+とする。このようにすることで、$i = 1 , \dots , m-1$の場合の
+不等式制約を満たす変数$\overline{x}$が必ず存在することになる。
+次に、$\A_m \in \Real^{n \times n_i}, \b_m \in \Real^{n}, \c_m \in \Real^{n_i}$と、
+ある$\overline{\x} \in \Real^{n_i}$が満たすべき不等式制約
+$\c_i^T \overline{\x} + d_i \ge \|\A_i \overline{\x} + \b_i \|$に対して、
+$\A_m = \I_m, \b_m = \0, \c_i = \0$とすることで、この不等式は
+\begin{align}
+	\0 + d_m \ge \|\I_m \x + \0\| = \|\x\|
+\end{align}
+となる。よって、$d_m = \|\overline{\x}\|+1$と設定すれば、
+$i=m$の場合の不等式制約は$\|\overline{\x}\|+1 \ge \|\x\|$となるので、有界な問題となる。
+この場合、MATLABでは$\overline{x} = \text{randn} (n,1) \in \Real^n$に対して以下のように設定する。
+\begin{align}
+  A\{m\} = \text{eye}(n) , b\{m\} = \text{zeros}(n,1) ,
+  c\{m\} = \text{zeros}(n,1) ,
+  d\{m\} = \text{norm} (\overline{x})^2 + 1
+\end{align}
+
+\subsection{実験結果}\label{sec:Numerical_Result}
+実験結果について、まずは計算時間と精度で評価をし、続いて
+反復回数による評価を行う。また、ペナルティ係数の設定が与える影響についても、
+検討する。
+\subsubsection{計算時間と精度の評価}\label{sec:Evaluation_CPUtime_and_accuracy}
+
+この節では、3手法による計算時間とDimacs error値の違いに着目をする。
+表\ref{table:Experimental_Result}は、問題のサイズを変更した場合の各手法で求解までにかかった計算時間とDimacs errorの数値を表している。
+問題のサイズを決定する$m,n_i,\overline{m}$の3つを変えて数値実験を行った。
+なお、ペナルティ法のペナルティ係数は$10^2$とした。
+
+表\ref{table:Experimental_Result}では、%この表は、６つのブロックに分かれている。
+%サイズを６種類に変更して実験を行った。
+各ブロックにおいて横の行が各手法に対応しており、
+縦の列がそれぞれSDPT3に入力するように変換した後の変数の数、制約の数、計算時間(秒)、Dimacs errorに対応している。
+% ここで、計算時間はCPUがかかった全体の時間としている。
+
+%\begin{minipage}
+\begin{table}[h]
+  \caption{各手法での計算時間とDimacs errorの数値}
+  \label{table:Experimental_Result}
+  %\centering
+  \scriptsize
+  %\small
+  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 3,n_i = 5,\overline{m}= 3$}\\
+    %\hline
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 10 & 0.9 & 1.44E-11 & 0.00E+0 & 3.33E-11 & 0.00E+0 & 5.96E-09 & 6.58E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 10 & 12 & 1.07 & 4.21E-16 & 0.00E+0 & 1.58E-11 & 0.00E+0 & 5.95E-09 & 7.57E-09 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 39 & 16 & 1.37 & 9.14E-15 & 0.00E+0 & 3.18E-11 & 0.00E+0 & 7.54E-09 & 9.40E-09 \\
+    %\hline
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 10,n_i = 10,\overline{m} = 10$}\\
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 31 & 1.14 & 1.19E-12 & 0.00E+0 & 1.18E-11 & 0.00E+0 & 8.53E-09 & 8.94E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 24 & 33 & 1.24 & 4.86E-15 & 0.00E+0 & 3.93E-12 & 0.00E+0 & 4.72E-09 & 5.70E-09 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 218 & 51 & 2.69 & 2.55E-14 & 0.00E+0 & 1.23E-11 & 0.00E+0 & 5.56E-09 & 7.60E-09 \\
+    %\hline
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 30,n_i = 10,\overline{m} = 20$}\\
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 71 & 2.35 & 5.22E-13 & 0.00E+0 & 6.90E-12 & 0.00E+0 & 7.07E-09 & 7.53E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 54 & 73 & 3.23 & 1.73E-14 & 0.00E+0 & 3.18E-12 & 0.00E+0 & -1.74E-09 & 6.79E-09 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 548 & 121 & 6.39 & 5.60E-14 & 0.00E+0 & 6.93E-12 & 0.00E+0 &
+    6.34E-09 & 8.53E-09 \\
+    %\hline
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 20,n_i = 20,\overline{m} = 40$}\\
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 101 & 3.19 & 6.54E-12 & 0.00E+0 & 8.07E-12 & 0.00E+0 & 8.57E-09 & 9.78E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 64 & 103 & 3.96 & 4.07E-14 & 0.00E+0 & 1.49E-12 & 0.00E+0 & 4.45E-09 & 9.26E-09 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 1248 & 161 & 9.16 & 5.95E-14 & 0.00E+0 & 2.07E-12 & 0.00E+0 & 4.84E-09 & 7.09E-09 \\
+    %\hline
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 50,n_i = 50,\overline{m} = 60$}\\
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 171 & 4.59 & 2.40E-11 & 0.00E+0 & 1.67E-12 & 0.00E+0 & 7.65E-09 & 8.52E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 114 & 173 & 4.10 & 1.29E-07 & 0.00E+0 & 1.10E-06 & 0.00E+0 & -7.03E-02 & 3.05E-04 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 5568 & 281 & 48.35 & 9.30E-13 & 0.00E+0 & 6.97E-13 & 0.00E+0 & 6.72E-09 & 9.22E-09 \\
+    %\hline
+    \cline{1-10}
+    \multicolumn{10}{|c|}{$m = 100,n_i = 100,\overline{m} = 80$}\\
+    \cline{1-10}
+    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
+    %\hline
+    \cline{1-10}
+    通常の内点法  & 4 & 261 & 6.21 & 2.03E-10 & 0.00E+0 & 3.96E-13 & 0.00E+0 & 5.26E-09 & 5.96E-09 \\
+    %\hline
+    \cline{1-10}
+    ペナルティ法 & 184 & 263 & 6.57 & 2.80E-07 & 0.00E+0 & 2.70E-07 & 0.00E+0 & -3.42E-02 & 6.20E-04 \\
+    %\hline
+    \cline{1-10}
+    緩和法 & 18088 & 441 & 375.38 & 7.75E-13 & 0.00E+0 & 2.69E-13 & 0.00E+0 & 6.32E-09 & 8.02E-09 \\
+    %\hline
+    \cline{1-10}
+  \end{tabular}
+\end{table}
+
+表\ref{table:Experimental_Result}から分かるように、
+計算時間は、通常の内点法とペナルティ法ではどのサイズの問題でもほぼ同じ計算時間であるが、
+緩和法は問題の規模が大きくなるとかなり長い計算時間を要する。
+これは、第\ref{sec:Deformation_relax}節で述べたように、生成される変数と制約の数が関係していることが分かる。
+
+次に、error値に着目する。
+まず、error2とerror4について検討する。
+どの実験結果においてもerror2とerror4が$0$に近い値となっており、全ての手法で実行可能解を求められていることが分かる。
+
+また、等式条件とDimacs errorの対応について考えてみる。
+error1は、主問題における等式制約に関する数値誤差、
+error3は双対問題における等式制約に関する数値誤差、
+つまりどれくらい等式制約から逸脱しているかを表現している。
+error1とerror3を見てみると、問題のサイズが小さい場合は、通常の内点法が$10^{-12}$の精度で求解できているのに比べて、ペナルティ法と緩和法は$10^{-14}$という精度で求解を達成できていることがわかる。
+次に、問題のサイズが大きい場合に注目すると、
+通常の内点法の精度は$10^{-12}$と変わらないままとなっている。
+しかし、ペナルティ法は通常の内点法に比べて$10^{-7}$まで精度が落ちてしまっているのに対して、
+緩和法はサイズが大きくなっても$10^{-13}$という良い精度を保ちつつ求解ができていることがわかる。
+
+さらに error5, error6 についても考察を与える。
+error5は双対ギャップに対応している。
+error5を見てみると、通常の内点法と緩和法は$10^{-9}$程度の精度が安定して得られている。
+しかし、ペナルティ法では$m = 30,n_i = 10,\overline{m} = 20$と$m = 50,n_i = 50,\overline{m} = 60$および$m = 100,n_i = 100,\overline{m} = 80$の場合に負の値となっている。
+定理\ref{theorem:weak-duality}より、本来error5は$0$以上の値を取るはずである。
+数値誤差の影響もあり、ペナルティ法では良い解が得られているわけではないことがわかる。
+error6 においても、ペナルティ法では精度値が落ちる場合が確認できる。
+
+\subsubsection{反復回数の評価}\label{sec:Evaluation_itertimes}
+
+次に、各手法の求解に要する反復回数で比較を行う。
+ここでは、ペナルティ係数を$10^3$ に設定した。
+問題のサイズ$m,n_i,\overline{m}$
+をそれぞれ$1$〜$100$の範囲でランダムな値として生成した。具体的には
+\begin{align}
+  m,n_i,\overline{m} = 1 + \text{round}(100*\text{rand})
+\end{align}
+とした。
+その条件の下で、各手法の反復回数を集計しグラフにしたものが
+図\ref{figure:hanpukukaisu}
+である。
+合計50回実験を行い、
+横軸が実験番号を表し、縦軸が3手法の反復回数である。
+
+\begin{figure}[h]
+  \begin{center}
+    \includegraphics[width=100mm,height=65mm]{IterTimePlots2_1.pdf}
+    \caption{各手法の求解に要する反復回数 \label{figure:hanpukukaisu}}
+  \end{center}
+\end{figure}
+
+平均回数は、通常の内点法が24.6回、ペナルティ法が22.2回、緩和法が36.6回となり、
+どの問題においても通常の内点法とペナルティ法に比べて、
+緩和法では最適解を求めるのに多い反復回数を必要とする。
+%\red{この次の文、前の文と矛盾してます。反復回数が多いのは、緩和法のはず。}
+これは、緩和法では決定変数$\y$の数がかなり大きくなるため、他の２手法に比べて
+error値の数値誤差が大きく出てしまうため、全てのerror値が$\epsilon$以下となるという反復の終了条件を満たしにくいことが影響していると考えられる。
+%ペナルティ法では実行可能領域が広がっているため、中心パスを通って最適解にたどり着くための距離を多く必要とするためだと予想される。
+また、大体の場合において若干ペナルティ法の方が通常の内点法に比べて少ない反復回数で
+求解できていることがわかる。
+これは、ペナルティ法では実行可能領域が広がるため、
+通常の内点法に比べてステップ長を少しだけ長く取ることができることが影響していると考えられる。
+
+\subsubsection{ペナルティ係数の影響の評価}\label{sec:Evaluation_penalty_coefficient}
+
+% これ以前に行っていた実験では、ペナルティ係数は全て$10^3$の値に固定していた。
+ここでは、ペナルティ係数を$10^1$〜$10^5$の値からランダムに設定することで、
+ペナルティ係数の大きさが求解にどのような影響があるのかを調べる。
+\ref{sec:Evaluation_itertimes}節と同様に$i = 1 , \cdots , m$に対して
+\begin{align}
+  P_i,\overline{P}_i = 100 + \text{round}(9900*\text{rand})
+\end{align}
+で生成した。
+計算時間と反復回数をまとめたのが図\ref{figure:CPUtime}のグラフである。
+
+\begin{figure}[tp]
+  \begin{center}
+    \includegraphics[width=100mm,height = 65mm]{CPUtimePlots5.pdf}
+    \caption{CPU計算時間と反復回数 \label{figure:CPUtime}}
+  \end{center}
+\end{figure}
+
+%\red{図\ref{figure:CPUtime}は右の軸と左の軸で間違っている？反復回数が整数でない
+% 状況になっている。}
+図\ref{figure:CPUtime}から、以下がわかる。
+求解にかかる反復回数は、ペナルティ係数を変化させた場合でも全て同じ28回となった。
+また、かかるCPU計算時間は、概ね7秒と変化がなく安定していた。
+このことから、ペナルティ係数を変化させたとしても、反復回数と計算時間などに
+大きな影響はないことがわかった。
+より発展的な実験として、目的関数に追加するペナルティ係数を、
+二次関数や対数障壁関数などの異なる関数として追加した場合を考えると、
+また違った結果が得られるのではないかと考えられる。
+
+次にペナルティ係数を変化させた場合のDimacs errorへの影響について考察する。
+表\ref{table:Experimental_Result_penalty_dimacserror}
+は、\eqref{NoinnerpointSOCP:penalty}において
+ペナルティ係数を変化させた場合のDimacs errorの数値を表している。
+ペナルティ係数の具体的な値としては、先ほどと同様$10^1$〜$10^5$の範囲の中で値を変化させて実験を行った。
+
+\begin{table}[tp]
+  \caption{ペナルティ係数を変化させた場合のDimacs errorの数値}
+  \label{table:Experimental_Result_penalty_dimacserror}
+  \centering
+  \scriptsize
+  %\small
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    \cline{1-7}
+    \multicolumn{7}{|c|}{$m = 50,n_i = 50,\overline{m}= 50$}\\
+    %\hline
+    \cline{1-7}
+    & error1 & error2 & error3 & error4 & error5& error6 \\
+    %\hline
+    \cline{1-7}
+    $P, \overline{P} = 10$ & 1.39E-13 & 0.00E+0 & 6.45E-14 & 0.00E+0 & 4.93E-09 & 5.58E-09 \\
+    %\hline
+    \cline{1-7}
+    $P, \overline{P} = 10^2$ & 6.56E-13 & 0.00E+0 & 4.03E-14 & 0.00E+0 & 4.93E-09 & 5.63E-09 \\
+    %\hline
+    \cline{1-7}
+    $P, \overline{P} = 10^3$  & 9.55E-14 & 0.00E+0 & 5.25E-14 & 0.00E+0 & -1.40E-08 & 6.27E-09 \\
+    %\hline
+    \cline{1-7}
+    $P, \overline{P} = 10^4$  & 1.57E-13 & 0.00E+0 & 3.92E-14 & 0.00E+0 & -2.82E-09 & 5.41E-09 \\
+    %\hline
+    \cline{1-7}
+    $P, \overline{P} = 10^5$  & 9.59E-11 & 0.00E+0 & 3.27E-07 & 0.00E+0 & -0.999 & 1.47E-05 \\
+    %\hline
+    \cline{1-7}
+  \end{tabular}
+\end{table}
+
+表\ref{table:Experimental_Result_penalty_dimacserror}
+からわかるように、error2とerror4がともに0になっていたので、
+全ての場合で出力された解は二次錐に含まれている。
+$P, \overline{P}$の値に着目すると、$P, \overline{P}$の値が$10^2$以下の場合では、どのerror値も全て0に近い値となっていることから、安定して解を求めることができている。
+逆に、$P, \overline{P}$の値が$10^5$のようにかなり大きい場合は、双対ギャップに対応するerror5が負の値となっていることからうまく求解できていないことがわかる。
+$P, \overline{P}$の値が$10^3,10^4$の場合は、error5が負の値となっている。
+しかし、この数値実験では多少の数値誤差を含むので、
+error5がほぼ0に近い値となっていること、および、その他のerror値が$P, \overline{P} = 10,10^2$
+の時と同じ精度で正の値かつ0に近い値となっていることから、
+安定して求解できていると考えられる。
+
+\subsubsection{有効な式の評価}
+\ref{sec:Deformation_penalty}節で見たように、ペナルティ法では不等式制約に$\xi_i,\overline{\xi}_i$を加えて実行可能領域を広げ、必ず実行可能内点を持つようにすることで数値的安定性の向上を目指した。
+ここで、追加した変数$\xi_i,\overline{\xi}_i$に着目し、
+追加する前の問題\eqref{NoinnerpointSOCP}と
+追加した後の問題\eqref{NoinnerpointSOCP:penalty}で、
+どれくらい実行可能領域が変化しているかを考える。
+
+そのために、$\xi_i,\overline{\xi}_i$の値に着目する。
+今回は、$m = 10, \overline{m} = 10$として数値実験を行った。
+その他は、$n_i = 10 , P = 10^2$と設定した。
+以前の実験と同様に有界性も仮定した。
+得られた具体的な$\xi_i,\overline{\xi}_i$の値は以下である。
+\begin{align}
+  \xi =
+  \begin{pmatrix}
+    2.9638E-12 \\
+    2.9665E-12 \\
+    2.9633E-12 \\
+    2.9655E-12 \\
+    2.9687E-12 \\
+    2.9638E-12 \\
+    2.9643E-12 \\
+    2.9649E-12 \\
+    2.9666E-12 \\
+    2.9597E-12 \\
+  \end{pmatrix}
+  \ , \ \overline{\xi} =
+  \begin{pmatrix}
+    3.7917E-12 \\
+    3.7649E-12 \\
+    3.8559E-12 \\
+    3.5737E-12 \\
+    3.6003E-12 \\
+    3.5165E-12 \\
+    3.8981E-12 \\
+    4.0037E-12 \\
+    3.7935E-12 \\
+    4.0776E-12 \\
+  \end{pmatrix}
+\end{align}
+
+この数値から、各ベクトル$\xi$と$\overline{\xi}$の各成分にばらつきはなく、
+ほぼ同じ値となる結果となった。
+%\red{この次の文、上の結果と逆のことを書いている？}
+また、若干$\overline{\xi}$の成分の方が$\xi$の成分よりも大きい値となった。
+具体的な値としては、$10^{-12}$の精度となっていてほぼ0に近い値である。
+このことから、最適解の領域はあまり広がらず、元の問題\eqref{NoinnerpointSOCP}
+と同じ制約を保ったまま求解できていることがわかる。
+
+%\subsection{(実験結果に対する理論的考察orToh先生にもらったコードの確認)}\label{sec:Consideration_to_Numerical_Expericence}
+%どちらか、余裕があればやりたいです。
+%\red{間に合わないといけないので、このsubsectionはコメントアウトしましょう。}
+
+\clearpage
+
+\section{結論}\label{sec:Conclusion}
+%卒論は適宜バックアップをとっておく！
+本論文では、実行可能内点を持たないようなSOCPを内点法で求解する場合に不安定になりやすいことを解消する方法として、
+緩和法とペナルティ法を施すことで、数値的安定性の向上を目指した。
+第\ref{sec:Numerical_Experience}節の結果から、求解の精度は、
+どの問題のサイズに対しても緩和法が他の手法に比べて有効であることがわかった。
+逆に、求解にかかる反復回数は、緩和法が他の手法に比べて少し多い回数を必要とする結果となった。
+計算時間は、緩和法では変数の数が多くなるため、通常の内点法とペナルティ法に比べて、
+求解までに要する計算時間が長くなることが分かった。
+また、ペナルティ法のみに着目してペナルティ係数を変化させた場合では、ペナルティ係数を$10^4$以上の値だと安定して求解できない結果となったが、
+それより小さい値で設定をすることで良い精度を保ったまま安定して解を求めることができていることが確認された。
+求解にかかる反復回数は問題のサイズを変えても同じ回数を要する結果となった。
+
+今後の課題としては、以下が挙げられる。
+ペナルティ法による変形について、目的関数に追加するペナルティ項を1次関数で追加したので、
+二次関数などの別の関数を使ったペナルティ項を追加して実験をすることが考えられる。
+緩和法については、問題のサイズを大きくした際、求解にかかる時間が急激に増えてしまうというデメリットがわかった。緩和法の定式化に基づく効率的な内点法を設計するなどして、求解にかかる時間を短くすることも今後の課題と考えられる。
+
+%\red{このあとの文章は削除しましょう。どういうコードなのかを説明する必要もありますし、今回の内容とどのくらい関係があるかも、まだ調べてないし。} また、SDPT3の作成者であるToh先生からいただいたコードを用いて同様の実験を行い、比較をすることも今後の課題となる。
+
+\clearpage
+\section*{謝辞}\label{sec:Acknowledgement}
+
+本論文の執筆にあたり、数多くの助言や論文の添削、さらには数多くの質問に対して優しく丁寧に指導して頂きました指導教員の山下真教授に感謝いたします。
+また、ゼミを通じて多くのことを教えてくださった山下研究室、澄田研究室の先生方や先輩方に感謝いたします。
+最後に、学士論文をともに取り組んだ山下研究室、澄田研究室の仲間や友人、支えてくださった家族には感謝いたします。
+
+
+\clearpage
+%\red{参考文献のBibファイルは、修正が必要な個所が多かったので修正しておきました。}
+\begin{small}
+\bibliography{soturon.bib}
+\end{small}
+
+
+\end{document}

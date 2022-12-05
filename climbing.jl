@@ -41,7 +41,7 @@ end
 
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0010-seed-1029.csv"
+        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0015-seed-1029.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -180,9 +180,9 @@ function MISOCP_solverd_first_seq(q, u)
     # 目的関数
     @objective(model, Min,   (T_first+sum(T)+T_last))
     # 制約
-    @constraint(model, c4, [v_v*T_first;Q[:, 1] - p_o[:,1]] in SecondOrderCone())
-    @constraint(model, c5[j = 2:n], [v_v*T[j];Q[:,j-1] - Q[:,j]] in SecondOrderCone())
-    @constraint(model, c6,[v_v*T_last;p_f - Q[:, n]] in SecondOrderCone())
+    @constraint(model, c4, [v_c*T_first;Q[:, 1] - p_o[:,1]] in SecondOrderCone())
+    @constraint(model, c5[j = 2:n], [v_c*T[j];Q[:,j-1] - Q[:,j]] in SecondOrderCone())
+    @constraint(model, c6,[v_c*T_last;p_f - Q[:, n]] in SecondOrderCone())
     @constraint(model, c81[i = 1:n], (Q[1,i] == sum(w[i,j]*q[1,j] for j in 1:n)))
     @constraint(model, c82[i = 1:n], (Q[2,i] == sum(w[i,j]*q[2,j] for j in 1:n)))
     @constraint(model, c9[i = 1:n], 1 == sum(w[i,:])) # for i
