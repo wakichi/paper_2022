@@ -464,7 +464,7 @@ $0$であり、$x_0 \ge 0$ となり実質的に非負制約である。
   この問題は、平面状における全方向性アンテナの感度の最小化問題や、周波数近似フィルタの誤差の最小化問題などを解く際に用いられる~\cite{lobo1998applications}。
 \end{enumerate}
 
-\subsection{branch-and-cut}\label{sec:cone-property}
+\subsection{分枝限定法}\label{sec:cone-property}
 % ソルバーはおそらくbranch-and-cutをベースにしている。
 % アルゴリズムを記述する。
 % 厳密解を効率的に求められることを説明
@@ -515,9 +515,7 @@ $0$であり、$x_0 \ge 0$ となり実質的に非負制約である。
 
 \subsection{焼きなまし法}\label{sec:Second_Order_Cone_Programming:property}
 多くの既存研究において、\eqref{al:2:1}, \eqref{al:2:2}に対して以下の仮定を置いている。
-% subsubsectionでヒューリスティックについて軽く説明
-\subsubsection{ヒューリスティック}
-\subsubsection{焼きなまし法}
+% ヒューリスティックについて軽く説明
 % 現実的な時間で解を求める手法の一つとして焼きなまし法を紹介する。
 \begin{assumption}\label{assumption:SOCP}
 
@@ -584,12 +582,14 @@ $\x_i \in \KC_i, \z_i \in \KC_i$ から $\z_i^T \x_i \ge 0$ より $\sum_{i=1}^m
 \end{theorem}
 
 \section{問題設定と定式化}\label{sec:Deformation_relax_and_penalty}
+%vrpについて触れる
+%
 
 前節でみたように内点の存在は内点法の計算で重要であるが、
 電力潮流問題~\cite{cao2018study}などでは実際に内点を持たないSOCPが現れる。
 そこで、内点がないという制約付きの二次錐計画問題を数値的に安定して求解可能とする方法について考える。
 
-\subsection{内点なし制約付き二次錐計画問題}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
+\subsection{問題設定}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
 
 内点を持たないSOCPに対する主双対内点法の数値的安定性を数値実験で比較するために、この小節では、そのような内点を持たないSOCPの生成方法を検討する。
 
@@ -697,7 +697,7 @@ $\overline{\A}_i \in \Real^{n \times n_i},
 このSOCPは、第\ref{sec:Second_Order_Cone_Programming:solution}節で議論したように内点法で解こうとすると数値的に不安定になりやすく、これを解消する必要がある。
 解消する方法として、本論文ではペナルティ法~\cite{benson2007exact},~\cite{fukuda2012differentiable}と緩和法~\cite{liu2020globally}を検討する。
 
-\subsection{ペナルティ法による変形方法}\label{sec:Deformation_penalty}
+\subsection{MISOCPとして定式化}\label{sec:Deformation_penalty}
 この方法では、\eqref{NoinnerpointSOCP}の二次錐制約に対して、ペナルティ係数$\xi_i$を加えることで不等式制約を緩めることを考える。
 一方で、ペナルティ項を目的関数に追加して、ペナルティも最小化することで
 \eqref{NoinnerpointSOCP}になるべく近い解を求めるように問題を変形する。
@@ -752,7 +752,8 @@ $\F \x = \g$および$(\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overli
 $\overline{\x}$をとることができる。
 この効果によって、内点法で安定して解くことができると期待できる。
 
-\subsection{緩和法による変形方法}\label{sec:Deformation_relax}
+\subsection{non}\label{sec:Deformation_relax}
+% cplexの解法は数値実験章で比較するのみ
 緩和法は、
 内点を持たないような不等式制約に着目して、不等式制約を等式制約と錐制約に分解することで、数値的に安定して求解しようとする方法である。
 例えば、各反復で錐制約については内点である必要があるが、
@@ -818,7 +819,8 @@ $\y_i = \begin{pmatrix}
 
 \clearpage
 
-\section{焼きなまし法を用いた解法}\label{sec:SimulatedAnnealing}
+\section{提案手法}\label{sec:SimulatedAnnealing}
+% ヒューリスティックを強調した章の名前にしてもいいかも
 %aa
 \section{数値実験}\label{sec:Numerical_Experience}
 この節では、前節で導入した
@@ -846,7 +848,7 @@ SDPT3-4.0~\cite{toh2012implementation}を用いた。
   \end{tabular}
 \end{table}
 
-\subsection{ソルバーの入力標準形への変形方法}\label{sec:Deformation_to_SDPT3solver}
+\subsection{定数の設定}\label{sec:Deformation_to_SDPT3solver}
 今回使用したSDPT3では、次のような形式が入力形式であるため、この形式に沿うように入力をする必要がある
 %\modify{。~\cite{toh2012implementation}。}{
 \cite{toh2012implementation}。
@@ -944,7 +946,7 @@ $A^u = \F^T , c^u = \g_u$として
 同様の手順により\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}も
 SDPT3に入力可能である。
 
-\subsection{初期点の設定と終了条件}\label{sec:parameter_settings}
+\subsection{初期点とパラメータの設定}\label{sec:parameter_settings}
 
 SDPT3は以下のような引数をとる。
 \begin{center}
@@ -1212,7 +1214,7 @@ error値の数値誤差が大きく出てしまうため、全てのerror値が$
 これは、ペナルティ法では実行可能領域が広がるため、
 通常の内点法に比べてステップ長を少しだけ長く取ることができることが影響していると考えられる。
 
-\subsubsection{ペナルティ係数の影響の評価}\label{sec:Evaluation_penalty_coefficient}
+\subsubsection{yet}\label{sec:Evaluation_penalty_coefficient}
 
 % これ以前に行っていた実験では、ペナルティ係数は全て$10^3$の値に固定していた。
 ここでは、ペナルティ係数を$10^1$〜$10^5$の値からランダムに設定することで、
@@ -1291,7 +1293,7 @@ error5がほぼ0に近い値となっていること、および、その他のe
 の時と同じ精度で正の値かつ0に近い値となっていることから、
 安定して求解できていると考えられる。
 
-\subsubsection{有効な式の評価}
+\subsubsection{yet}
 \ref{sec:Deformation_penalty}節で見たように、ペナルティ法では不等式制約に$\xi_i,\overline{\xi}_i$を加えて実行可能領域を広げ、必ず実行可能内点を持つようにすることで数値的安定性の向上を目指した。
 ここで、追加した変数$\xi_i,\overline{\xi}_i$に着目し、
 追加する前の問題\eqref{NoinnerpointSOCP}と
