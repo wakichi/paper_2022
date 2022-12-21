@@ -324,8 +324,6 @@ CVTSPWTとは以下の条件を満たすcarrierの経路のうち、スタート
 2. vehicleには一度に航行できる距離$a$があり、これを超えてはいけない。航行可能距離は、carrierと同じ座標に来たら再び$a$に戻る。\\
 4. vehicleはcarrierから離陸して着陸するまでの間に一箇所しか訪れられない。
 
-\subsection{MISOCPの定義}
-この章では、MISOCPとヒューリスティクスに関する前提知識について述べる。
 
 \subsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming}
 
@@ -345,74 +343,46 @@ CVTSPWTとは以下の条件を満たすcarrierの経路のうち、スタート
 ここで、$f \in \Real^n , \A, \b, \c, \d$が定数で$x \in \Real^n$が目的変数である。
 % 混合整数の場合の定式化
 % 混合整数の場合、内点法などのSOCで使えるアルゴが使用できないことを説明
-SOCPは目的変数が連続であるため内点法などで最適値を求められるが、MISOCPは変数が離散であるため組合せ最適化のアルゴリズムを用いて最適値を求める必要がある。ここでは、特に分枝限定法について紹介する。
+SOCPは目的変数が連続であるため内点法などで最適値を求められるが、MISOCPは変数が離散であるため組合せ最適化のアルゴリズムを用いて最適値を求める必要がある。
 \subsection{MISOCPとして定式化}\label{sec:Deformation_relax}
 % cplexの解法は数値実験章で比較するのみ
 % 誰の既存研究の結果を用いているかを必ず明記する。
-緩和法は、
-内点を持たないような不等式制約に着目して、不等式制約を等式制約と錐制約に分解することで、数値的に安定して求解しようとする方法である。
-例えば、各反復で錐制約については内点である必要があるが、
-infeasible interior-point method では
-等式制約については必ずしも厳密に満たさなくても探索方向の計算が可能である。
-具体的には、\eqref{NoinnerpointSOCP}の二次錐の制約に関して、新しく変数を入れることで
-等式制約と二次錐 $\KC = \left\{ \z = \begin{pmatrix}
-z_0 \\ \z_1  \end{pmatrix}: z_0 \ge \|\z_1\| \right\}$ に分解する。
-実際には、
-\begin{align}
-  \begin{pmatrix}
-  \c_i^T \x + d_i \\  \A_i \x + \b_i
-\end{pmatrix} \in \KC
-\end{align}
-で表現されている二次錐制約に対して、
-新しい変数$\y_i$を導入し
-等式制約と二次錐制約に分ける。
-\begin{align}
-	\begin{pmatrix}
-		\c_i^T \x + d_i \\  \A_i \x + \b_i
-	\end{pmatrix} \in \KC
-\ \iff \
-  \y_i = \begin{pmatrix}
-  \c_i^T \x + d_i \\  \A_i \x + \b_i
-\end{pmatrix}, \ \y_i \in \KC
-\end{align}
-これによって、数値誤差が等式制約
-$\y_i = \begin{pmatrix}
-\c_i^T \x + d_i \\  \A_i \x + \b_i
-\end{pmatrix}$
-の部分に出るようになるので、安定して解くことができるようになると期待できる。
-したがって、解く問題は以下のようになる。
-\begin{align}
-  \begin{array}{rcl}
-    \min & : & \f^T \x \\
-    \text{subject to} & : & \y_i = \begin{pmatrix}
-    \c_i^T \x + d_i \\  \A_i \x + \b_i
-  \end{pmatrix}
-  \ (i=1, \ldots, m) \\
-  & & \overline{\y}_i = \begin{pmatrix}
-  \overline{\c}_i^T \x + \overline{d}_i \\  \overline{\A}_i \x + \overline{\b}_i
-\end{pmatrix}
-\ (i=1, \ldots, \overline{m}) \\
-& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
--
-(\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
-& & \F \x = \g \\
-& & \y_i \ (i=1, \ldots, m), \ \overline{\y}_i \ (i=1, \ldots, \overline{m}) \in \KC
-\end{array}
-\tag{$\PC_r$}
-\label{NoinnerpointSOCP:relax}
-\end{align}
-
-この緩和法では、数値誤差の影響が錐$(\KC)$から等式条件のほうに強くなるため、
-数値的には安定して解きやすくなる。
-しかし、追加する変数や制約の数が多くなってしまう。
-例えば、元の問題\eqref{NoinnerpointSOCP}の制約の本数が$m + 2 \overline{m} + 1$本であるのに対して、
-この問題\eqref{NoinnerpointSOCP:penalty}の制約の本数は$2 m + 3 \overline{m} + 1$本である。
-変数は、元の問題\eqref{NoinnerpointSOCP}の制約の本数が$m$本であるのに対して、
-この問題\eqref{NoinnerpointSOCP:penalty}の制約の本数は$n + m\sum_{i=1}^m(n_i + 1) + \overline{m} \sum_{i=1}^{\overline{m}} (n_i + 1)$本である。
-これからわかるように、$n_i$の数値が大きいほど、サイズが大きい場合に変数の数が急激に多くなり、計算に必要な変数と制約の数が他の2手法に比べてかなり多くなる。
-このため、最適解の求解に要する時間が増えてしまうというデメリットもある。
-
-\clearpage
+ここでは、対象問題を解くためのモデルをMISOCPを用いて定式化する。これは、上でのべた先行研究の拡張である。\\
+まずは定数を定義する。\\
+	\begin{description}
+	\item[$n$]number of target points
+	\item[$q_i$] set of target points coodinates
+	\item[$q_{min}$] vector of the minimum of the $q_i$
+	\item[$q_{max}$]  vector of the maximum of the $q_i$
+	\item[$V_v$] vehicle speed
+	\item[$V_c$] carrier speed
+	\item[$a$] vehicle operational range
+	\item[$p_o$]coordinates of the starting point of the trajectory
+	\item[$p_f$]coordinates of the ending point of the trajectory
+\end{description}
+次に決定変数を定義する。
+	\begin{description}
+	\item[$Q_i$] coodinates in the i th target point to be visited
+	\item[$w_{ij}$] binary variables taking 1 if target point j is visited in position j
+	\item[$p_{to, i}$] coordinates of the takeoff point for the visit of $Q_i$
+	\item[$p_{l, i}$] coorinates of the landing point after the visit of $Q_i$
+	\item[$t_{i,1}$] time taken by the vehicle from $p_{to, i}$ to reach $Q_i$
+	\item[$t_{i,2}$] time taken by the vehicle from$Q_i$to reach $p_{l, i}$
+	\item[$t_i$] time taken by the carrier from $p_{to, i}$  to reach $p_{l, i}$
+	\item[$T_1$] time take by the carrier from $p_o$to reach  $p_{to, 1}$
+	\item[$T_i$] time take by the carrier from $p_{l, i-1}$to reach  $p_{to, i}$
+	\item[$T_{n+1}$] time take by the carrier from $p_{l,n}$to reach  $p_{f}$
+	%TODO: uの定義
+\end{description}
+ MISOCPモデルを定義する。\\
+ \begin{align}
+ 	\begin{array}{rcl}
+ 		\min & : & \sum_{i=1}^{n}t_i+\sum_{i=1}^{n+1}T_i\\
+ 		\text{subject to} & : &\|\A_i x +\b_i\|_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
+ 		& & \F\x=\g\\
+ 		& & \x_i \in \mathbb{Z}, (i=1,\dots, n)
+ 	\end{array}
+ \end{align}
 
 \section{提案手法}\label{sec:SimulatedAnnealing}
 \subsection{焼きなまし法の定義}
