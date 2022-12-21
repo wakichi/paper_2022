@@ -311,449 +311,44 @@ $\x \circ \y = \left(
 
 \clearpage
 
-\section{前提知識}\label{sec:preliminaries}
+\section{先行研究}\label{sec:preliminaries}
+% MISOCPで定義する論文と焼きなましの論文の二つを紹介する。
 
+\section{問題設定}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
+\subsection{対象とする問題について}\label{sec:problem_settings}
+本研究が対象とするCVTSPWT(Carrier Vehicle Travering Salesman Problem with Time Window)についての説明を与える。\\
+この問題では、速度$V_c$であるcarrierと 速度$V_v$であるvehicleの二つの輸送機器を用いる。ただし, $V_c< V_v$\\
+CVTSPWTとは以下の条件を満たすcarrierの経路のうち、スタート地点($q_s$)からゴール地点($q_f$)まで最も少ない時間で航行できる経路とその時間を求める問題である。\\
+0. どの目的地にも少なくとも一回訪れる。その際、訪れるのはvehicleでもcarrierでも良い\\
+1. ある目的地iには$(u_{i1}, u_{i2})$の間の時間に訪れる。\\
+2. vehicleには一度に航行できる距離$a$があり、これを超えてはいけない。航行可能距離は、carrierと同じ座標に来たら再び$a$に戻る。\\
+4. vehicleはcarrierから離陸して着陸するまでの間に一箇所しか訪れられない。
+
+\subsection{MISOCPの定義}
 この章では、MISOCPとヒューリスティクスに関する前提知識について述べる。
 
 \subsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming}
 
-\subsubsection{二次錐計画問題}\label{sec:Second_Order_Cone_Programming:standard_formulation}
-% 連続変数の二次錐計画問題について
-% 定義・主問題・双対問題・今回使う形での定式化
-本論文で扱うSOCPの標準形は、以下のように定義され、これを主問題と呼ぶ。
+まずは、混合整数二次錐計画問題の定義について述べる。\\
+% Kを用いた定義
+%TODO:
+本論文ではこれをユークリッドノルムを用いた以下の形に変形して用いる。
+% 変形した最適化問題の定義
 \begin{align}
-  \begin{array}{cclc}
-		\min & : & \c_1^T \x_1 + \dots + \c_m^T \x_m \\
-		\text{subject to} & : & \A_1 \x_1 + \dots + \A_m \x_m = \b \\
-		& & \x_i \in \KC_i \ (\text{for} \ i = 1, \dots , m)
-  \end{array}
-  \tag{$\PC$}
-  \label{al:2:1}
-\end{align}
-ここで、$i = 1, \dots , m$に対して$ \A_i \in \Real^{n \times n_i} , \b \in \Real^n , \c_i \in \Real^{n_i}$が定数で$\x_i \in \Real^{n_i}$が変数である。
-また、$\KC_i$は$n_i$次元の二次錐である。
-また、$\eqref{al:2:1}$において、$\e = (\e_{n_1}, \dots, \e_{n_m})$, $\R = \R_{n_1} \oplus \cdots \oplus \R_{n_m}$とする。
-
-一般的に$n$次元の二次錐$\KC \subset \Real^n$は、以下で定義される。
-\begin{align}
-	\KC = \left\{ \x = \left(
-	\begin{array}{c}
-		x_0 \\
-		\x_1
+	\begin{array}{rcl}
+		\min & : & \f ^T\x \\
+		\text{subject to} & : &||\A_i x +\b_i||_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
+		& & \F\x=\g\\
+		& & \x_i \in \mathbb{Z}, (i=1,\dots, n)
 	\end{array}
-	\right) \
-	\middle| \ x_0 \in \Real, \x_1 \in \Real^{n-1},  x_0 \ge \|\x_1\| \right\}
 \end{align}
-
-二次錐 $\KC$ に対して、境界と内部は次のように定義される。
-\begin{align}
-	\text{int} \ \KC = \{ \x \in \KC \mid x_0 > \|\x_1\| \}, \quad
-	\text{bd} \ \KC = \{ \x \in \KC \mid x_0 = \|\x_1\| \}
-\end{align}
-
-\eqref{al:2:1}に対し、$\x$が等式制約$\A_1 \x_1 + \dots + \A_m \x_m = \b$および
-$\x_i \in \KC_i \ (\text{for} \ \ i = 1, \dots , m)$
-を満たすとき実行可能解と呼ぶ。
-さらに実行可能解であり内部に存在する ($\x_i \in \text{int} \ \KC_i$ for $i=1,\dots,m$)とき、
-実行可能内点と呼ぶ。
-
-\eqref{al:2:1}を主問題とするとき、対応する双対問題は以下の形式で与えられる。
-\begin{align}
-\begin{array}{rcl}
-\max & : & \b^T \y \\
-    \text{subject to} & : & \A_i^T \y + \z_i =  \c_i \ (\text{for} \ \ i = 1, \dots , m) \\
-     & & \z_i \in \KC_i \ (\text{for} \ \ i = 1, \dots , m)
-\end{array}
-\tag{$\DC$}
-\label{al:2:2}
-\end{align}
-
-主問題と同様に、\eqref{al:2:2}に対して$(\y,\z)$が等式制約$\A_i^T \y + \z_i =  \c_i, \z_i \in \KC_i \
-(\text{for} \ i= 1, \dots , m)$を満たすとき実行可能解と呼び、
-さらに$\z_i \in \text{int} \ \KC_i \ (\text{for} \ i = 1, \dots , m)$
-を満たすとき実行可能内点と呼ぶ。
-
-\subsubsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming:application}
-
+ここで、$f \in \Real^n , \A, \b, \c, \d$が定数で$x \in \Real^n$が目的変数である。
 % 混合整数の場合の定式化
 % 混合整数の場合、内点法などのSOCで使えるアルゴが使用できないことを説明
-線形計画問題(LP)は多くの実用上の応用問題を定式化可能であるが、
-SOCPはLPを含むさらに大きな問題のクラスである。
-この包含関係を見るために、
-以下の標準形で与えられるLPがSOCPで定式化できることを示す。
-
-\begin{align}
-  \begin{array}{rcl}
-    \min & : & \sum_{i=1}^{m} c_i x_i \\
-    \text{subject to} & : & \sum_{i=1}^m \a_i x_i = \b \\
-    & & x_i \ge 0 \ (i = 1, \dots , m)
-  \end{array}
-\end{align}
-
-ここで、$c_i \in \Real \ (i = 1 , \dots , m) , \a_i \in \Real^{n_i} \ (i = 1 , \dots , m)$が定数で$x_i \in \Real \ (i = 1 , \dots , m)$が変数である。
-特に、各変数は非負制約が課されている。
-一方でSOCPにおける二次錐制約は
-\begin{align}
-  x_0 \ge \|\x_1\| \ , \ \x_1 \in \Real^{n-1}
-\end{align}
-であるが、ここで $n=1$の場合、つまり$1$次元の二次錐を考えると右辺の$\|\x_1\|$が
-$0$であり、$x_0 \ge 0$ となり実質的に非負制約である。
-したがって、LPにおける非負制約を$1$次元の二次錐として捉えることで、
-一般にLPはSOCPは帰着可能である。
-
-%二次錐制約が１次元と２次元の場合について考えると、制約はそれぞれ
-%\begin{align}
-%  x_0 \ge 0 \ , \ x_0 \ge |x_1|
-%\end{align}
-%となる。$x_0 \ge |x_1|$は$x_0 \ge x_1 (x_1 \ge 0) \ , \ - x_0 < x_1 (x_1 < 0)$に分けられる。
-%\begin{align}
-%  (x_0 , x_1) \rightarrow (\frac{x_0 - x_1}{\sqrt2} , \frac{x_0 + x_1}{\sqrt2})
-%  \label{transform:LP_to_SOCP}
-%\end{align}
-%という変形をすることで、二次元平面で時計回りに$45^\circ$回転させると、非負制約に変形できる。したがって、あるSOCPに対して\eqref{transform:LP_to_SOCP}の変形をすることで、1または2次元の二次錐に関する制約は全て非負制約に変形することができる。
-%（以下の文章は数学的な意味が良く分からないので削除しました。）
-%以上を踏まえると、一般的な$n$次元の二次錐制約は、
-%同様に、\eqref{transform:LP_to_SOCP}と逆の変形をすることでLPをSOCPに変形することもできる。
-%
-%一方で、３次元以上のSOCPについては、二次錐制約$x_0 \ge \|\x_1\|$の両辺を二乗することで
-%高々二次制約式となる。二次制約式は、一次制約式を含む。よって、$n \ge 3$の場合もLPを含む。
-%したがって、SOCPはLPを含むことがわかる。
-
-%ここからはSOCPについて述べる。SOCPは理学・工学の幅広い分野へと応用されている。
-%ここでは、その数例を紹介する。
-第\ref{sec:introduction}節でも触れたとおりSOCPは理学・工学の幅広い分野へと応用されているが、
-その数例をここで紹介する。
-
-\begin{enumerate}[具体例1) :] \upshape
-	\item \underline{ノルム最小化問題}
-
-  ノルム最小化問題は次のように定式化される。
-  \begin{align}
-    \begin{array}{rclc}
-      \min & : & \sum_{i=1}^{n} \|\overline{\v}_i\| & \\
-      \text{subject to} & : &  \A_i \x + \b_i = \overline{\v}_i & (i = 1, \dots , n)\\
-    \end{array}
-  \end{align}
-  このままだと、二次錐制約が入っておらず、SOCPの形になっていない。そこで、$\v_i = (v_{i0} ; \overline{\v}_i)$とし、
-  $n$次元の二次錐$\KC$に対して、$\v_i \in \KC \ (i = 1, \dots , n)$をいう制約を追加することで、$v_{i0} \ge \sum_{i=1}^{n} \|\overline{\v}_i\|$より、目的関数$\sum_{i=1}^{n} v_{i0}$を最小化する次のSOCPに変形することができる。
-  \begin{align}
-    \begin{array}{rclc}
-      \min & : & \sum_{i=1}^{n} v_{i0} & \\
-      \text{subject to} & : & \A_i \x + \b_i = \overline{\v}_i & (i = 1, \dots , n)\\
-      & & \v_i \in \KC & (i = 1, \dots , n)
-    \end{array}
-  \end{align}
-  この問題は、インパルス性雑音除去のためのネットワーク最適化問題や、シュタイナー木問題、最適位置問題などを解く際に用いられる~\cite{lobo1998applications}。
-  \item \underline{最大ノルム最小化問題}
-
-  最大ノルム最小化問題は次のように定式化される。
-  \begin{align}
-    \begin{array}{rclc}
-      \min & : & \underset{i = 1, \dots , m}{\max} \|v_i\|  & \\
-      \text{subject to} & : & \A_i \x + \b_i = \v_i & (i = 1, \dots , n)
-    \end{array}
-  \end{align}
-  ここで、$t$を全ての$i$に対して$t \ge \|v_i\|$を満たす変数とおくと、この問題は$t$の値を最小化する問題と等しい。よって、次のようなSOCPに変形できる。
-  \begin{align}
-    \begin{array}{rclc}
-      \min & : & t & \\
-      \text{subject to} & : & \A_i \x + \b_i = \v_i & (i = 1, \dots , n)\\
-      & & (t;\v_i) \in \KC  &  (i = 1, \dots , n)
-    \end{array}
-  \end{align}
-  この問題は、平面状における全方向性アンテナの感度の最小化問題や、周波数近似フィルタの誤差の最小化問題などを解く際に用いられる~\cite{lobo1998applications}。
-\end{enumerate}
-
-\subsection{分枝限定法}\label{sec:cone-property}
-% ソルバーはおそらくbranch-and-cutをベースにしている。
-% アルゴリズムを記述する。
-% 厳密解を効率的に求められることを説明
-二次錐$\KC$の重要な性質として、自己双対錐であることが挙げられる。
-つまり、双対錐を
-\begin{align}
-	\KC^* := \{ \z \mid \x^T \z \ge 0 \ \text{for} \ \x \in \KC \}\label{eq:dual-cone}
-\end{align}
-により定義したときに、以下の定理が成り立つ。
-
-\begin{theorem}\label{theorem:cone-property}
-	$\KC^* = \KC$ が成り立つ。
-\end{theorem}
-
-\begin{proof}
-	$\z \in \KC$ならば、$z_0 \ge \|\z_1\|$より、$\x \in \KC$に対して
-  \begin{align}
-    \x^T \z = z_0 x_0 + \z_1^T \x_1 \ge z_0 x_0 - \|\z_1\| \|\x_1\| \ge 0
-  \end{align}
-  %となるので$\z \in \KC^*$が成り立つ。つまり$\KC \subset \KC^*$が成り立つ。
-  となり、$\z \in \KC^*$が示される。つまり$\KC \subset \KC^*$が成り立つ。
-
-  逆に$\z \in \KC^*$ならば、$\x \in \KC$に対して$\x^T \z \ge 0$であることから
-  %逆に$\z \in \KC^*$ならば、$\x \in \KC$に対して$\x^T \z \ge 0$なので、
-  $x_0 = 1 , \x_1 = \0$とすれば
-  \begin{align}
-    \x^T \z = z_0 x_0 + \z_1^T \x_1 = z_0 \ge 0
-  \end{align}
-  がわかる。さらに、$x_0 = z_0 , \x_1 = - \z_1$とすれば
-  \begin{align}
-    \x^T \z = z_0 x_0 + \z_1^T \x_1 = z_0^2 - \|\z_1\|^2 \ge 0
-  \end{align}
-  %となるので$\z \in \KC$が成り立つ。つまり$\KC^* \subset \KC$が成り立つ。したがって$\KC = \KC^*$が成り立つ。
-  となり$\z \in \KC$となる。つまり$\KC^* \subset \KC$が成り立つ。したがって$\KC = \KC^*$を得る。
-\end{proof}
-
-この定理から、以下の系~\ref{corollary:cone-property}が導出される。
-この系~\ref{corollary:cone-property}は弱双対定理の証明に利用される。
-
-\begin{corollary}\label{corollary:cone-property}
-	$\x \in \KC, \z \in \KC$ であれば、$\x^T \z \ge 0$ である。
-\end{corollary}
-\begin{proof}
-	定理~\ref{theorem:cone-property}より、$\z \in \KC $ から
-	$\z \in \KC^*$ である。
-	したがって、$\x \in \KC$ と $\KC^*$ の定義から $\x^T \z \ge 0$ である。
-\end{proof}
-
-\subsection{焼きなまし法}\label{sec:Second_Order_Cone_Programming:property}
-多くの既存研究において、\eqref{al:2:1}, \eqref{al:2:2}に対して以下の仮定を置いている。
-% ヒューリスティックについて軽く説明
-% 現実的な時間で解を求める手法の一つとして焼きなまし法を紹介する。
-\begin{assumption}\label{assumption:SOCP}
-
-\begin{enumerate}[(i)] \upshape
-	\item 行列$\A = (\A_1 , \A_2 , \dots , \A_m)$の行ベクトルは線形独立である。\label{assumption1}
-	\item 主問題\eqref{al:2:1}と双対問題\eqref{al:2:2}のそれぞれの実行可能領域は
-	空集合ではない。\label{assumption2}
-\end{enumerate}
-
-\end{assumption}
-
-仮定(\ref{assumption1})は、
-探索方向を求める際の線形方程式\eqref{eq:gauss3}
-が解を持つために必要な条件である。
-ただし、仮定(\ref{assumption1})が満たされない場合でも、
-主問題 \eqref{al:2:1} の制約を
-線形方程式系とみなしてガウスの消去法により冗長な制約を削除することにより、
-一般性を失うことなく仮定(\ref{assumption1})を仮定することが可能である。
-仮定(\ref{assumption2})は、実行可能領域が空集合ならば、最適解のなす集合も空集合である。
-数値実験の際に安定して内点法で解を求める事ができるためにも必要である。
-本論文でも、仮定(\ref{assumption1})および仮定(\ref{assumption2})を仮定する。
-
-SOCPにおける理論的な性質として、\eqref{al:2:1}と\eqref{al:2:2}の関係性は重要である。
-まず最初の性質として、主問題の目的関数値は双対問題の目的関数値の上界となっており、
-同様に双対問題の目的関数値は主問題の目的関数値の下界である。
-このことは、以下の弱双対定理によって示される。
-
-\begin{theorem}[弱双対定理]\label{theorem:weak-duality}
-$\x = (\x_1; \dots ; \x_m)$を\eqref{al:2:1}の任意の実行可能解、$(\y,\z)$ただし$\z = (\z_1; \dots ; \z_m)$を\eqref{al:2:2}の任意の実行可能解とする。このとき、以下が成り立つ。
-  \begin{align}
-    \sum_{i=1}^m \c_i^T \x_i - \b^T \y = \sum_{i=1}^m \z_i^T \x_i \ge 0
-  \end{align}
-\end{theorem}
-
-\begin{proof}
-\eqref{al:2:1}の制約から$\sum_{i=1}^m \A_i \x_i = \b$であり、
-\eqref{al:2:2}の制約から$\A_i^T \y + \z_i = \c_i \ (\text{for} \ i = 1, \dots , m)$であることから
-\begin{equation}
-\sum_{i=1}^m \c_i^T \x_i - \b^T \y = \sum_{i=1}^m (\A_i^T \y + \z_i)^T \x_i - \b^T \y
-= \y^T \b + \sum_{i=1}^m \z_i^T \x_i - \b^T \y = \sum_{i=1}^m \z_i^T \x_i
-\end{equation}
-である。
-ここで、系~\ref{corollary:cone-property} より
-$\x_i \in \KC_i, \z_i \in \KC_i$ から $\z_i^T \x_i \ge 0$ より $\sum_{i=1}^m \z_i^T \x_i \ge 0$ である。
-%コーシー・シュワルツの不等式より$\z_1 \x_1 \ge - \|\z_1\| \|\x_1\|$なので
-%  \begin{align}
-%    \z^T \x = z_0 x_0 + \z_1^T \x_1 \ge z_0 x_0 - \|\z_1\| \|\x_1\|
-%  \end{align}
-%  さらに、二次錐制約 $\x \in \KC, \z \in \KC$ より、
-%  \begin{align}
-%    \z^T \x \ge z_0 x_0 - \|\z_1\| \|\x_1\| > 0
-%  \end{align}
-\end{proof}
-
-ここで、$\sum_{i=1}^m \x_i^T \z_i$ は双対ギャップと呼ばれ、正の値となることもあるが、
-内点の仮定を置くと双対ギャップが$0$になることが知られている。これは、次の定理から示される。
-
-\begin{theorem}[強双対定理~\cite{alizadeh2001second}]\label{theorem:strong-duality}
-\textup{\eqref{al:2:1},\eqref{al:2:2}}がそれぞれ実行可能内点を持つとき、
-それぞれの問題に最適解$(\x^*) = (\x_1^* ; \dots ; \x_m^*)\text{と}(\y^*,\z^*)$ただし$\z^* = (\z_1^* ; \dots ; \z_m^*)$が存在して、それらの最適値は一致する。つまり、次の式が成り立つ。
-\begin{align}
-\sum_{i=1}^m \c_i^T \x_i^* = \b^T \y^* \ \ (i.e. \ \ \sum_{i=1}^m {\z_i^*}^T \x_i^* = 0)
-\end{align}
-\end{theorem}
-
-\section{問題設定と定式化}\label{sec:Deformation_relax_and_penalty}
-%vrpについて触れる
-%
-
-前節でみたように内点の存在は内点法の計算で重要であるが、
-電力潮流問題~\cite{cao2018study}などでは実際に内点を持たないSOCPが現れる。
-そこで、内点がないという制約付きの二次錐計画問題を数値的に安定して求解可能とする方法について考える。
-
-\subsection{問題設定}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
-
-内点を持たないSOCPに対する主双対内点法の数値的安定性を数値実験で比較するために、この小節では、そのような内点を持たないSOCPの生成方法を検討する。
-
-まず、以下のSOCPを考える。
-\begin{align}
-	\begin{array}{rcl}
-		\min & : & \f^T \x \\
-		\text{subject to} & : & \c_i^T \x + d_i \ge \|\A_i \x + \b_i\|
-		\ (i=1, \ldots, m) \\
-		& & \F \x = \g
-	\end{array}
-\end{align}
-ここで、$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^{n}, \c_i \in \Real^{n_i}, d_i \in \Real, \f \in \Real^{n_i} , \F \in \Real^{p \times n_i}, \g \in \Real^p$
-が定数であり、$\x \in \Real^{n_i}$が決定変数である。
-この問題は、不等式制約が
-\begin{align}
-  \left(
-  \begin{array}{c}
-    \c_i^T \x + d_i \\
-    \A_i \x + \b_i
-  \end{array}
-  \right) = \left(
-  \begin{array}{c}
-    \c_i^T \\
-    \A_i
-  \end{array}
-  \right) \x + \left(
-  \begin{array}{c}
-    d_i \\
-    \b_i
-  \end{array}
-  \right) \in \KC
-\end{align}
-と等しいので、\eqref{al:2:1}で出ている二次錐制約に変形することができることからSOCPである。
-特に、$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^{n},
-\c_i \in \Real^{n_i}, \F \in \Real^{p \times n_i}$と、ある$\overline{\x} \in \Real^{n_i}$に対して
-\begin{align}
-  d_i &= \|\A_i \overline{\x} + \b_i\| - \c_i^T \overline{\x} + 1 \\
-  \g &= \F \overline{\x}
-\end{align}
-のようにデータを入力することで、実行可能な内点が存在する問題を生成することが可能である。
-
-この問題を変形することで、実行可能内点が存在しないようなSOCPを生成する。
-具体的には、
-$\overline{m}$本の二次錐制約と$\overline{m}$本の等式制約を付け加えた以下のようなSOCP
-を考える。
-\begin{align}
-	\begin{array}{rcl}
-		\min & : & \f^T \x \\
-		\text{subject to} & : & \c_i^T \x + d_i \ge \|\A_i \x + \b_i\|
-		\ (i=1, \ldots, m) \\
-		& & \overline{\c}_i^T \x + \overline{d}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
-		\ (i=1, \ldots, \overline{m}) \\
-		& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
-    -
-    (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
-		& & \F \x = \g
-	\end{array}
-  \tag{$\PC_o$}
-  \label{NoinnerpointSOCP}
-\end{align}
-
-この問題\eqref{NoinnerpointSOCP}において$\overline{d}_i$は、
-$\overline{\A}_i \in \Real^{n \times n_i},
-\overline{\b}_i \in \Real^{n}, \overline{\c}_i \in \Real^{n_i}, \overline{\x} \in \Real^{n_i}$に対して
-\begin{align}
-  \overline{d}_i = - \overline{\c}_i^T \overline{x} + \| \overline{\A}_i \overline{\x} + \overline{\b}_i \|
-\end{align}
-を満たすように設定する。
-
-このとき、
-\begin{align}
-  \left(
-  \begin{array}{c}
-    \overline{\c}_i^T \\
-    \overline{\A}_i
-  \end{array}
-  \right) \overline{\x} + \left(
-  \begin{array}{c}
-    \overline{d}_i \\
-    \overline{\b}_i
-  \end{array}
-  \right)
-  \notin \text{int} \ \KC \ , \
-  \left(
-  \begin{array}{c}
-    \overline{\c}_i^T \\
-    \overline{\A}_i
-  \end{array}
-  \right) \overline{\x} + \left(
-  \begin{array}{c}
-    \overline{d}_i \\
-    \overline{\b}_i
-  \end{array}
-  \right) \in \text{bd} \ \KC
-\end{align}
-である。さらに
-\begin{align}
-  \HC = \{ \x \mid (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
-  -
-  (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0\}
-\end{align}
-とすると、$\KC \cap \HC \subset \text{bd} \ \KC$が成り立つ。よって、この問題は実行可能内点を持たないことがわかる。
-
-このSOCPは、第\ref{sec:Second_Order_Cone_Programming:solution}節で議論したように内点法で解こうとすると数値的に不安定になりやすく、これを解消する必要がある。
-解消する方法として、本論文ではペナルティ法~\cite{benson2007exact},~\cite{fukuda2012differentiable}と緩和法~\cite{liu2020globally}を検討する。
-
-\subsection{MISOCPとして定式化}\label{sec:Deformation_penalty}
-この方法では、\eqref{NoinnerpointSOCP}の二次錐制約に対して、ペナルティ係数$\xi_i$を加えることで不等式制約を緩めることを考える。
-一方で、ペナルティ項を目的関数に追加して、ペナルティも最小化することで
-\eqref{NoinnerpointSOCP}になるべく近い解を求めるように問題を変形する。
-
-具体的には、
-$\c_i^T \x + d_i \ge \|\A_i \x + \b_i\| $と$
-\overline{\c}_i^T \x + \overline{d}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
-$ の制約を、それぞれ
-$\xi_i \ge 0$と$\overline{\xi}_i \ge 0$ を入れることで緩和する。
-さらに、$\xi_i, \overline{\xi}_i$ ができるだけ$0$に近づけるように目的関数に
-ペナルティ項を追加する。
-つまり、以下の問題の求解を行う。
-\begin{align}
-	\begin{array}{rcl}
-		\min & : & \f^T \x + \sum_{i=1}^{m} P_i \xi_i + \sum_{i=1}^{\overline{m}} \overline{P}_i \overline{\xi}_i \\
-		\text{subject to} & : & \c_i^T \x + d_i+\xi_i \ge \|\A_i \x + \b_i\|
-		\ (i=1, \ldots, m) \\
-		& & \overline{\c}_i^T \x + \overline{d}_i + \overline{\xi}_i \ge \| \overline{\A}_i \x + \overline{\b}_i\|
-		\ (i=1, \ldots, \overline{m}) \\
-		& & (\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
-    -
-    (\overline{\A}_i \overline{\x} + \overline{\b}_i)^T(\overline{\A}_i \x + \overline{\b}_i) = 0 \ (i=1, \ldots, \overline{m}) \\
-		& & \F \x = \g \\
-		& & \xi_i \geq 0 \ (i=1, \ldots, m), \ \overline{\xi}_i \geq 0 \ (i=1, \ldots, \overline{m})
-	\end{array}
-  \tag{$\PC_p$}
-  \label{NoinnerpointSOCP:penalty}
-\end{align}
-ここで、$P_1, \ldots, P_m , \overline{P}_1, \ldots, \overline{P}_{\overline{m}}$ はペナルティの重みで、
-十分大きな正の値とする。
-入力データにもよるが、各データを $[0,1]$ 区間で乱数で生成した場合には、大体の目安として$10^3$ や $10^4$ などの値が入る。
-
-このペナルティ法は、新たなペナルティ項を追加したことで実行可能領域が広がるため、
-必ず実行可能内点を持つという性質を持つ。
-具体的には、$\xi_i , \overline{\xi}_i$を
-\begin{align}
-  \xi_i \ge \|\A_i \overline{\x} + \b_i \| - (\c_i^T \overline{\x} + \d_i) + 1 \ , \
-	\overline{\xi}_i \ge \|\overline{\A}_i \overline{\x} + \overline{\b}_i \| - (\overline{\c}_i^T \overline{\x} + \overline{\d}_i) + 1
-\end{align}
-を満たすようにとる。すると、$\x = \overline{\x}$は、不等式制約
-\begin{align}
-  \c_i^T \x + d_i+\xi_i > \|\A_i \x + \b_i\|
-  \ (i=1, \ldots, m) ,
-  & & \overline{\c}_i^T \x + \overline{d}_i + \overline{\xi}_i > \| \overline{\A}_i \x + \overline{\b}_i\|
-  \ (i=1, \ldots, \overline{m})
-\end{align}
-を満たしているので$\overline{\x}$は内点であり、かつ等式制約
-$\F \x = \g$および$(\overline{\c}_i^T \overline{\x} + \overline{d}_i)(\overline{\c}_i^T \x + \overline{d}_i)
--
-(\overline{\A}_i \overline{\x} + \overline{\b}_i)(\overline{\A}_i \x + \overline{\b}_i) = 0$を満たしているので実行可能でもある。
-よって、実際に\eqref{NoinnerpointSOCP:penalty}の実行可能内点として
-$\overline{\x}$をとることができる。
-この効果によって、内点法で安定して解くことができると期待できる。
-
-\subsection{non}\label{sec:Deformation_relax}
+SOCPは目的変数が連続であるため内点法などで最適値を求められるが、MISOCPは変数が離散であるため組合せ最適化のアルゴリズムを用いて最適値を求める必要がある。ここでは、特に分枝限定法について紹介する。
+\subsection{MISOCPとして定式化}\label{sec:Deformation_relax}
 % cplexの解法は数値実験章で比較するのみ
+% 誰の既存研究の結果を用いているかを必ず明記する。
 緩和法は、
 内点を持たないような不等式制約に着目して、不等式制約を等式制約と錐制約に分解することで、数値的に安定して求解しようとする方法である。
 例えば、各反復で錐制約については内点である必要があるが、
@@ -820,8 +415,17 @@ $\y_i = \begin{pmatrix}
 \clearpage
 
 \section{提案手法}\label{sec:SimulatedAnnealing}
+\subsection{焼きなまし法の定義}
+
+焼きなまし法(Simulated Annealing)とは、大域的最適解を求めるためのメタヒューリスティクスの一種である。 局所的最適解を避けるために、目的関数値が一時的に悪くなるような状態へも遷移するという特徴がある。
+\subsection{提案手法}
 % ヒューリスティックを強調した章の名前にしてもいいかも
-%aa
+% 問題を２ステップに分けて考える。辿る順番を求めるパートと、位置を決めるパート
+% 辿る順番を決めるのにSAを用いる
+% 辿る順番は組合せ最適化問題であり、選び方が途方もなくあるため全部見るのは困難
+%　よってこのパートはヒューリスティックを用いて克服する
+% 初期回の生成を緩和問題をソルバーで解くことにより効率化できる旨も記す。
+%
 \section{数値実験}\label{sec:Numerical_Experience}
 この節では、前節で導入した
 \eqref{NoinnerpointSOCP},\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}
