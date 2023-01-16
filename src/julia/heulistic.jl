@@ -5,7 +5,7 @@ using CSV
 using DataFrames
 using Random
 using StatsBase # 重複なく2つ抜き出すのに使用
-
+# NOTE: paper_2022上で動かすことを想定！
 
 ENV["CPLEX_STUDIO_BINARIES"] = "/Applications/CPLEX_Studio221/cplex/bin/x86-64_osx/"
 #import Pkg
@@ -18,7 +18,8 @@ using CPLEX
 is_includecsv = true
 have_timewindow  = true
 is_plot = true
-n_iteration = 100
+is_save = true
+n_iteration = 300
 is_movie_mode = true
 
 q_min = [0;0] # qの最小のx、y
@@ -33,15 +34,18 @@ function main()
     # 入力
     q, u = input()
     # ヒューリスティックの実行部分
-    score, seq, p_to, p_land = climing(q, u)
+    score, seq, p_to, p_land = annealing(q, u)
     # 出力
     # 7.00729450915383
-    output( p_to, p_land, seq, q)
+    p2 = output( p_to, p_land, seq, q)
+    if is_save
+        save_figure("/Users/wakitakouhei/Lab/paper_2022/temp/pictures/", "aa", p2)
+    end
 end
 
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0015-seed-1029.csv"
+        test_file = "/Users/wakitakouhei/Lab/paper_2022/src/resources/template/points_easy.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -105,7 +109,7 @@ function annealing(q,u)
     seq = make_first_seq(q,u)
     first_temp = 1
     end_temp = 0.001
-
+    output_easy(seq, 0)
     score,p_to,p_land = calc_score(seq, q, u)
     best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
     for i = 1:n_iteration
@@ -153,9 +157,48 @@ function simple_first_seq(q, u)
 end
 
 function Integer_solverd_first_seq(q, u)
+    # TODO: 実装
     distance_matrix = calc_distance(q)
+    distance_matrix_first = calc_distance_with(q, p_o)# TODO:q1との距離のベクトル
+    distance_matrix_last = calc_distance_with(q, p_f)# qnとの距離のベクトル
+    M = 10^10
 
-    return 0
+    n = size(q, 2)
+    model = Model()
+    set_optimizer(model, CPLEX.Optimizer)
+    # 決定変数
+    @variable(model, w[1:n, 1:n],Bin)
+    @variable(model, q_min[i]<=Q[i = 1:2, 1:n]<=q_max[i])
+    @variable(model, T[i=2:n]>=0) # T=1、n＋1は下に分離
+    # println("about T", T)#ok!
+    @variable(model, T_first>=0) 
+    @variable(model, T_last>=0) 
+    if have_timewindow
+        @variable(model, U[1:2,1:n]>=0)
+    end
+    # 目的関数
+    @objective(model, Min,   (T_first+sum(T)+T_last)) 
+    # 制約
+    # TODO:k,l, iの調整をする
+    @constraint(model, c1[k = 1:n], distance_matrix_first[k] <= v_c*T_first + M*(1-w[1,k]))
+    @constraint(model, c2[k = 1:n, l = 1:n, i=2:n ], distance_matrix[k,l] <= v_c*T[i]+M*(1-w[i,k])+M*(1-w[i-1,l]))
+    @constraint(model, c3[k = 1:n], distance_matrix_last[k] <= v_c*T_last + M*(1-w[n, k]))
+    @constraint(model, c81[i = 1:n], (Q[1,i] == sum(w[i,j]*q[1,j] for j in 1:n)))
+    @constraint(model, c82[i = 1:n], (Q[2,i] == sum(w[i,j]*q[2,j] for j in 1:n)))
+    @constraint(model, c9[i = 1:n], 1 == sum(w[i,:])) # for i
+    @constraint(model, c10[j = 1:n], 1 == sum(w[:, j])) # for j
+    if have_timewindow
+        @constraint(model, w1[i = 1:n], (T_first+sum(T[j+1] for j in 1:i-1))<=U[2,i])
+        @constraint(model, w2[i = 1:n], U[1,i]<=(T_first+sum(T[j+1] for j in 1:i-1)))
+        @constraint(model, w3[i = 1:n], (U[1,i] == sum(w[i,j]*u[1,j] for j in 1:n)))
+        @constraint(model, w4[i = 1:n], (U[2,i] == sum(w[i,j]*u[2,j] for j in 1:n)))
+    end
+    set_time_limit_sec(model, 10800.0)
+    elapsed_time = @elapsed optimize!(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    @show elapsed_time # cputime
+    return value.(w)
 end
 
 function MISOCP_solverd_first_seq(q, u)
@@ -231,7 +274,7 @@ function calc_score(w, q, u)
         @variable(model, U[1:2,1:n]>=0)
     end
 
-    @objective(model, Min,  sum(t) + (T_1+sum(T)+T_last))
+    @objective(model, Min,  sum(t) + 1.000001*(T_1+sum(T)+T_last))
 
     # Qの列どうやってとる？？
     @constraint(model, c0[i = 1:n], t[i]<=a)
@@ -317,8 +360,6 @@ function two_opt(seq)
 end
 
 function output( p_to, p_land, seq, q)
-
-
     p2 = deepcopy(p1)
     pto_value = value.(p_to)
     pland_value = value.(p_land)
@@ -371,6 +412,33 @@ function output( p_to, p_land, seq, q)
         end
     end
     display(p2)
+    return p2
+end
+
+function output_simple_TSP( seq, q)
+    """
+    droneなしのTSPを可視化します。
+    """
+    p3 = deepcopy(p1)
+    Q_value =make_Q(seq, q)
+    tlvector = matrix_to_vector(seq)
+    # intial to the first takeoff
+    plot!(p3, [p_o[1], Q_value[1, 1]], [p_o[2], Q_value[2, 1]],
+    color=:black)
+    # last landing to the final 
+    plot!(p3, [Q_value[1, n], p_f[1]], [Q_value[2,n], p_f[2]],
+    color=:black)
+    # plot!(pl, [targets[i,1], targets[i+1,1]], [targets[i,2],targets[i+1,2]], color=:black, linewidth=1, linestyle=:dot, label=\"\")
+
+    for k = 1:n-1
+        point = tlvector[k]
+        # ship-only route 
+        plot!(p3, [Q_value[1, k], Q_value[1, k+1]],
+            [Q_value[2, k], Q_value[2, k+1]],
+            color=:black, )
+    end
+    display(p3)
+    return p3
 end
 
 function output_easy(seq, score)
@@ -423,6 +491,7 @@ function matrix_to_vector(matrix)
             end
         end
     end
+    println("vec", vector)
     return vector
 end
 
@@ -431,6 +500,7 @@ function make_Q(seq, q)
     Q:
     """
     vec = matrix_to_vector(seq)
+    println(vec)
     Q = zeros(Float64, 2,length(vec))
     for i in 1:length(vec)
         idx_Q = vec[i]
@@ -454,4 +524,27 @@ function calc_distance(q)
     return matrix
 end
 
+function calc_distance_with(q, point)
+    n = size(q, 2)
+    vector = zeros(Float32, n) 
+    for i in 1:n
+        vector[i] = norm(q[:,i] - point)
+    end
+    return vector
+end
+
+function save_figure(dir_path::String, pic_name::String, plt)
+    """
+    Plot instance pltをfile_pathとして保存する関数。
+    """
+    file_path = string(dir_path, "/", pic_name, ".png")
+    println("save picture to: ", file_path)
+    display(plt)
+    savefig(file_path)
+    print("save_complete!")
+end
 main()
+# q,u = input()
+# seq = make_first_seq(q,u)
+# p3 = output_simple_TSP(seq, q)
+# save_figure("temp/pictures", "easy_no_drone_answer", p3)
