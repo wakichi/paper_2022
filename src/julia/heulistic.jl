@@ -5,6 +5,8 @@ using CSV
 using DataFrames
 using Random
 using StatsBase # 重複なく2つ抜き出すのに使用
+using BenchmarkTools
+using Dates
 # NOTE: paper_2022上で動かすことを想定！
 
 ENV["CPLEX_STUDIO_BINARIES"] = "/Applications/CPLEX_Studio221/cplex/bin/x86-64_osx/"
@@ -18,9 +20,9 @@ using CPLEX
 is_includecsv = true
 have_timewindow  = true
 is_plot = true
-is_save = true
-n_iteration = 300
-is_movie_mode = true
+is_save_pic = false
+n_iteration =50
+is_movie_mode = false
 
 q_min = [0;0] # qの最小のx、y
 q_max = [60;60]
@@ -29,23 +31,38 @@ v_v = 60 # km/h # default = 90 vehicle speed
 a = 21/60 # vehicle operation range
 p_o = [0;0] # startpoint
 p_f = [50;0]# end point
+infeasible_score = 500 # infeasibleの場合に返す値
+max_runtime = 600.0
 
+test_file = "/Users/wakitakouhei/Lab/paper_2022/src/resources/p0040/points-n-0040-seed-1064.csv"
+save_path = "/Users/wakitakouhei/Lab/paper_2022/src/Experiments.csv"
 function main()
     # 入力
     q, u = input()
     # ヒューリスティックの実行部分
-    score, seq, p_to, p_land = annealing(q, u)
+    runtime = @elapsed begin
+    score, seq, p_to, p_land, status, cnt = improved_SA(q, u)
+    end
+    println("count_all_iter:", cnt)
+    println("runtime:",runtime)
+    println("score:",score)
+    is_infeasible = (score == infeasible_score)
+    #status　は以下の二つ
+    # NORMAL_TERMINATE
+    # TIME_LIMIT
+    write_to_csv(save_path, n, runtime, score, n_iteration, true, is_infeasible, status, test_file)
     # 出力
     # 7.00729450915383
-    p2 = output( p_to, p_land, seq, q)
-    if is_save
-        save_figure("/Users/wakitakouhei/Lab/paper_2022/temp/pictures/", "aa", p2)
+    if !is_infeasible
+        # solutionが少なくとも一つ
+        p2 = output( p_to, p_land, seq, q)
+        if is_save_pic
+            save_figure("/Users/wakitakouhei/Lab/paper_2022/temp/pictures/", "aa", p2)
+        end
     end
 end
-
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/src/resources/template/points_easy.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -82,6 +99,7 @@ end
 function climing(q,u)
     # 初期解の生成(どういう形？)(1 0 0 0;0 0 1 0)的な形
     seq = make_first_seq(q,u)
+
     score,p_to,p_land = calc_score(seq, q, u)
     for i = 1:n_iteration
         # 近傍をとる。
@@ -111,6 +129,7 @@ function annealing(q,u)
     end_temp = 0.001
     output_easy(seq, 0)
     score,p_to,p_land = calc_score(seq, q, u)
+    first_score = score
     best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
     for i = 1:n_iteration
         temp = first_temp+(end_temp - first_temp)*(i/n_iteration)
@@ -119,11 +138,8 @@ function annealing(q,u)
         # スコアの算出(cplexに投げる)
         n_score,n_p_to, n_p_land = calc_score(n_seq, q, u)
         # 順列を更新するか判断する。
-        println("i:", i)
         output_easy(n_seq, score)
         prob = exp((score - n_score)/temp)
-        println("prob", prob, "   ",score - n_score)
-        println("temp", temp)
         # best case 
         if n_score<best_score
             best_score = n_score
@@ -142,17 +158,96 @@ function annealing(q,u)
             p_to = n_p_to
         end
     end
+    println("firstscore:", first_score)
+    output_easy(best_seq, best_score)
     return (best_score, best_seq, best_p_to, best_p_land)
 end
 
+function improved_SA(q,u)
+    """
+    終了条件: すくなくとも一つ実行可能解を見つけた上で、指定回数回解が改善されなかったら終了
+    もしくは開始から600秒が過ぎた段階で強制終了
+    """
+    # 初期設定
+    have_feasible_solution = false
+    update_solution = false # 一回のiterationの間で解が更新されたかどうか
+    status = "NORMAL_TERMINATE"
+    cnt_iter = 0
+    first_temp = 10
+    end_temp = 0.001
+    start_time = now()
+
+    seq = make_first_seq(q,u)
+    score,p_to,p_land = calc_score(seq, q, u)
+    best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
+
+    while(!(have_feasible_solution && !update_solution))
+        println("uifhaiughi;oahg;a")
+        update_solution = false
+        cnt_iter+=1
+        #TODO: 時間超過を判断
+        runtime = parse(Float64,string(now()-start_time)[1:end-12]) #millisecond
+        if (runtime>max_runtime*1000)
+            status = "TIME_LIMIT"
+            break
+        end
+        if !have_feasible_solution
+            # 解が存在する場合はそのまま使用。それ以外は新しく生成
+            seq = make_first_seq(q,u)
+            score,p_to,p_land = calc_score(seq, q, u)
+            best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
+        end
+        #TODO: iterかいSA
+        for i = 1:n_iteration
+            temp = first_temp+(end_temp - first_temp)*(i/n_iteration)
+            # 近傍をとる。
+            n_seq = make_new_seq(seq)
+            # スコアの算出(cplexに投げる)
+            n_score,n_p_to, n_p_land = calc_score(n_seq, q, u)
+            # 順列を更新するか判断する。
+            output_easy(n_seq, score)
+            prob = exp((score - n_score)/temp)
+            # best case 
+            if n_score<best_score
+                best_score = n_score
+                best_p_to = n_p_to
+                best_p_land = n_p_land
+                best_seq = n_seq
+                update_solution = true
+            end
+            if prob> rand()
+                # 更新
+                score = n_score
+                seq = n_seq
+                p_land = n_p_land
+                p_to = n_p_to
+            end
+        end
+        #TODO: 解が更新されたかや最適解があるかどうか検知
+        if (best_score != infeasible_score) 
+            have_feasible_solution = true
+        end
+    end
+    return (best_score, best_seq, best_p_to, best_p_land, status, cnt_iter)
+end
+
 function make_first_seq(q,u)
-    seq = MISOCP_solverd_first_seq(q, u)
+    # seq = MISOCP_solverd_first_seq(q, u)
+    seq = shuffle_first_seq(q,u)
+    # seq = simple_first_seq(q,u)
     return seq
 end
 
 function simple_first_seq(q, u)
     n = size(q, 2) # the number of target points 
     seq = Matrix{Int32}(1I, (n, n)) # 単位行列
+    return seq
+end
+
+function shuffle_first_seq(q, u)
+    n = size(q,2)
+    vecter_to_matrix
+    seq = vecter_to_matrix(shuffle(1:n))
     return seq
 end
 
@@ -306,7 +401,7 @@ function calc_score(w, q, u)
     try
         score = objective_value(model)
     catch
-        score = 100000 # 10^14でかく#TODO: ここの値の調整必要
+        score =infeasible_score # 10^14でかく#TODO: ここの値の調整必要
     end
     return score, p_to, p_land
 end
@@ -319,7 +414,9 @@ function make_new_seq(seq)
     if rand()>0.8
         n_seq = simple_swap(seq)
     else
-        n_seq = two_opt(seq)
+        # n_seq = two_opt(seq)
+        n_seq = simple_swap(seq)
+        n_seq = simple_swap(n_seq)
     end
     return n_seq
 end
@@ -499,6 +596,7 @@ function make_Q(seq, q)
     """
     Q:
     """
+    println(seq)
     vec = matrix_to_vector(seq)
     println(vec)
     Q = zeros(Float64, 2,length(vec))
@@ -543,6 +641,14 @@ function save_figure(dir_path::String, pic_name::String, plt)
     savefig(file_path)
     print("save_complete!")
 end
+
+function write_to_csv(csv_path, n, compute_time, obj_value, n_iter, is_SA, is_infeasible,status,  data_path)
+    seed = data_path[end-7:end-4] # seed値は必ず4桁を補償
+    df  = DataFrame(n = [n], compute_time = [compute_time], obj_value = [obj_value], n_iter = [n_iter], is_SA = [is_SA], is_infeasible = [is_infeasible], status = [status],seed = [seed])
+    CSV.write(csv_path, df, append = true, writeheader = false)
+end
+
+
 main()
 # q,u = input()
 # seq = make_first_seq(q,u)
