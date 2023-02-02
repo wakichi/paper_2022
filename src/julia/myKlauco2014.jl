@@ -14,7 +14,7 @@ using LinearAlgebra
 using Plots: plot, plot! # to supress VScode linter warningd
 using CSV
 using DataFrames
-
+using BenchmarkTools
 gr()
 # unicodeplots()
 
@@ -31,9 +31,11 @@ gr()
 # 実行時パラメータを指定する場所
 is_includecsv = true
 have_timewindow = true
-
+save_path = "/Users/wakitakouhei/Lab/paper_2022/src/Experiments.csv"
+n = 13
+seed = 1024 + n+0
 if is_includecsv
-    test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0010-seed-1029.csv"
+    test_file = @sprintf("/Users/wakitakouhei/Lab/paper_2022/src/resources/p%04d/points-n-%04d-seed-%d.csv",n,n,seed)
     println("loading the data in $(test_file)")
     df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
     q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -42,7 +44,11 @@ if is_includecsv
         u = [df[i, j] for i = 3:4, j = 1:size(df, 2)]
     end
 end
-
+function write_to_csv(csv_path, n, compute_time, obj_value, n_iter, is_SA, is_infeasible,status,  data_path)
+    seed = data_path[end-7:end-4] # seed値は必ず4桁を補償
+    df  = DataFrame(n = [n], compute_time = [compute_time], obj_value = [obj_value], n_iter = [n_iter], is_SA = [is_SA], is_infeasible = [is_infeasible], status = [status],seed = [seed])
+    CSV.write(csv_path, df, append = true, writeheader = false)
+end
 # constants
 # 数値実験欄見て埋める
 # qは簡単のため4点程度で行う。
@@ -66,7 +72,6 @@ a = 21/60 # vehicle operation range
 p_o = [0;0] # startpoint
 p_f = [50;0]# end point
 #todo q とuのサイズ違う場合をチェック
-
 
 # q_s = [0; 0]   # initial point   
 # q_f = [50; 0]  # final point 
@@ -101,7 +106,6 @@ display(p1)
 ## big-M
 ##Here
 # M = maximum(d) + 2 * 50 * sqrt(2) # diagonal length of the area
-
 
 ## make the model
 model = Model()
@@ -188,15 +192,30 @@ end
 ## optimize the model
 # set_silent(model) # to supress detailed log of MISOCP solver
 # set_time_limit_sec(model, 3600.0)
-set_time_limit_sec(model, 10800.0)
+set_time_limit_sec(model, 600)
 elapsed_time = @elapsed optimize!(model)
-@show termination_status(model)
-@show objective_value(model)
-@show elapsed_time # cputime
+# @show termination_status(model)
+# @show result_count(model) == 0
+# @show objective_value(model)
+# @show elapsed_time # cputime
 
+# println("runtime:", elapsed_time)
+# println("score:", objective_value(model))
+# println("result num:", result_count(model))
+# println(value.(p_to))
+# println(value.(T_1))
 
-println(value.(p_to))
-println(value.(T_1))
+#データを保存
+println("status:",JuMP.termination_status(model))
+is_infeasible = (result_count(model) ==0)
+print(is_infeasible)
+status = termination_status(model)
+if (!is_infeasible  )
+    objvalue = objective_value(model)
+else
+    objvalue = -1
+end
+write_to_csv(save_path, n, elapsed_time, objvalue, -1, false, is_infeasible,status, test_file)
 
 ## print flight sequence
 # alpha_value = zeros(Int,n,n)
@@ -271,5 +290,5 @@ for k = 1:n
     end
 end
 display(p2)
-savefig("/Users/wakitakouhei/Lab/paper_2022/hoge.png")
+# savefig("temp/pictures/mid.png")
 end

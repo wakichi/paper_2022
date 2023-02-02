@@ -5,7 +5,9 @@ using CSV
 using DataFrames
 using Random
 using StatsBase # 重複なく2つ抜き出すのに使用
-
+using BenchmarkTools
+using Dates
+# NOTE: paper_2022上で動かすことを想定！
 
 ENV["CPLEX_STUDIO_BINARIES"] = "/Applications/CPLEX_Studio221/cplex/bin/x86-64_osx/"
 #import Pkg
@@ -18,8 +20,9 @@ using CPLEX
 is_includecsv = true
 have_timewindow  = true
 is_plot = true
-n_iteration = 100
-is_movie_mode = true
+is_save_pic = false
+n_iteration =50
+is_movie_mode = false
 
 q_min = [0;0] # qの最小のx、y
 q_max = [60;60]
@@ -28,20 +31,38 @@ v_v = 60 # km/h # default = 90 vehicle speed
 a = 21/60 # vehicle operation range
 p_o = [0;0] # startpoint
 p_f = [50;0]# end point
+infeasible_score = 500 # infeasibleの場合に返す値
+max_runtime = 600.0
 
+test_file = "/Users/wakitakouhei/Lab/paper_2022/src/resources/p0040/points-n-0040-seed-1064.csv"
+save_path = "/Users/wakitakouhei/Lab/paper_2022/src/Experiments.csv"
 function main()
     # 入力
     q, u = input()
     # ヒューリスティックの実行部分
-    score, seq, p_to, p_land = climing(q, u)
+    runtime = @elapsed begin
+    score, seq, p_to, p_land, status, cnt = improved_SA(q, u)
+    end
+    println("count_all_iter:", cnt)
+    println("runtime:",runtime)
+    println("score:",score)
+    is_infeasible = (score == infeasible_score)
+    #status　は以下の二つ
+    # NORMAL_TERMINATE
+    # TIME_LIMIT
+    write_to_csv(save_path, n, runtime, score, n_iteration, true, is_infeasible, status, test_file)
     # 出力
     # 7.00729450915383
-    output( p_to, p_land, seq, q)
+    if !is_infeasible
+        # solutionが少なくとも一つ
+        p2 = output( p_to, p_land, seq, q)
+        if is_save_pic
+            save_figure("/Users/wakitakouhei/Lab/paper_2022/temp/pictures/", "aa", p2)
+        end
+    end
 end
-
 function input()
     if is_includecsv
-        test_file = "/Users/wakitakouhei/Lab/paper_2022/tests/points-n-0015-seed-1029.csv"
         println("loading the data in $(test_file)")
         df = CSV.read(test_file, DataFrame; header=0)    # test data by "generate-instance.jl"
         q = [df[i, j] for i = 1:2, j = 1:size(df, 2)]
@@ -78,6 +99,7 @@ end
 function climing(q,u)
     # 初期解の生成(どういう形？)(1 0 0 0;0 0 1 0)的な形
     seq = make_first_seq(q,u)
+
     score,p_to,p_land = calc_score(seq, q, u)
     for i = 1:n_iteration
         # 近傍をとる。
@@ -105,8 +127,9 @@ function annealing(q,u)
     seq = make_first_seq(q,u)
     first_temp = 1
     end_temp = 0.001
-
+    output_easy(seq, 0)
     score,p_to,p_land = calc_score(seq, q, u)
+    first_score = score
     best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
     for i = 1:n_iteration
         temp = first_temp+(end_temp - first_temp)*(i/n_iteration)
@@ -115,11 +138,8 @@ function annealing(q,u)
         # スコアの算出(cplexに投げる)
         n_score,n_p_to, n_p_land = calc_score(n_seq, q, u)
         # 順列を更新するか判断する。
-        println("i:", i)
         output_easy(n_seq, score)
         prob = exp((score - n_score)/temp)
-        println("prob", prob, "   ",score - n_score)
-        println("temp", temp)
         # best case 
         if n_score<best_score
             best_score = n_score
@@ -138,11 +158,83 @@ function annealing(q,u)
             p_to = n_p_to
         end
     end
+    println("firstscore:", first_score)
+    output_easy(best_seq, best_score)
     return (best_score, best_seq, best_p_to, best_p_land)
 end
 
+function improved_SA(q,u)
+    """
+    終了条件: すくなくとも一つ実行可能解を見つけた上で、指定回数回解が改善されなかったら終了
+    もしくは開始から600秒が過ぎた段階で強制終了
+    """
+    # 初期設定
+    have_feasible_solution = false
+    update_solution = false # 一回のiterationの間で解が更新されたかどうか
+    status = "NORMAL_TERMINATE"
+    cnt_iter = 0
+    first_temp = 10
+    end_temp = 0.001
+    start_time = now()
+
+    seq = make_first_seq(q,u)
+    score,p_to,p_land = calc_score(seq, q, u)
+    best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
+
+    while(!(have_feasible_solution && !update_solution))
+        println("uifhaiughi;oahg;a")
+        update_solution = false
+        cnt_iter+=1
+        #TODO: 時間超過を判断
+        runtime = parse(Float64,string(now()-start_time)[1:end-12]) #millisecond
+        if (runtime>max_runtime*1000)
+            status = "TIME_LIMIT"
+            break
+        end
+        if !have_feasible_solution
+            # 解が存在する場合はそのまま使用。それ以外は新しく生成
+            seq = make_first_seq(q,u)
+            score,p_to,p_land = calc_score(seq, q, u)
+            best_score, best_p_to, best_p_land,best_seq= score, p_to, p_land, seq
+        end
+        #TODO: iterかいSA
+        for i = 1:n_iteration
+            temp = first_temp+(end_temp - first_temp)*(i/n_iteration)
+            # 近傍をとる。
+            n_seq = make_new_seq(seq)
+            # スコアの算出(cplexに投げる)
+            n_score,n_p_to, n_p_land = calc_score(n_seq, q, u)
+            # 順列を更新するか判断する。
+            output_easy(n_seq, score)
+            prob = exp((score - n_score)/temp)
+            # best case 
+            if n_score<best_score
+                best_score = n_score
+                best_p_to = n_p_to
+                best_p_land = n_p_land
+                best_seq = n_seq
+                update_solution = true
+            end
+            if prob> rand()
+                # 更新
+                score = n_score
+                seq = n_seq
+                p_land = n_p_land
+                p_to = n_p_to
+            end
+        end
+        #TODO: 解が更新されたかや最適解があるかどうか検知
+        if (best_score != infeasible_score) 
+            have_feasible_solution = true
+        end
+    end
+    return (best_score, best_seq, best_p_to, best_p_land, status, cnt_iter)
+end
+
 function make_first_seq(q,u)
-    seq = MISOCP_solverd_first_seq(q, u)
+    # seq = MISOCP_solverd_first_seq(q, u)
+    seq = shuffle_first_seq(q,u)
+    # seq = simple_first_seq(q,u)
     return seq
 end
 
@@ -152,10 +244,56 @@ function simple_first_seq(q, u)
     return seq
 end
 
-function Integer_solverd_first_seq(q, u)
-    distance_matrix = calc_distance(q)
+function shuffle_first_seq(q, u)
+    n = size(q,2)
+    vecter_to_matrix
+    seq = vecter_to_matrix(shuffle(1:n))
+    return seq
+end
 
-    return 0
+function Integer_solverd_first_seq(q, u)
+    # TODO: 実装
+    distance_matrix = calc_distance(q)
+    distance_matrix_first = calc_distance_with(q, p_o)# TODO:q1との距離のベクトル
+    distance_matrix_last = calc_distance_with(q, p_f)# qnとの距離のベクトル
+    M = 10^10
+
+    n = size(q, 2)
+    model = Model()
+    set_optimizer(model, CPLEX.Optimizer)
+    # 決定変数
+    @variable(model, w[1:n, 1:n],Bin)
+    @variable(model, q_min[i]<=Q[i = 1:2, 1:n]<=q_max[i])
+    @variable(model, T[i=2:n]>=0) # T=1、n＋1は下に分離
+    # println("about T", T)#ok!
+    @variable(model, T_first>=0) 
+    @variable(model, T_last>=0) 
+    if have_timewindow
+        @variable(model, U[1:2,1:n]>=0)
+    end
+    # 目的関数
+    @objective(model, Min,   (T_first+sum(T)+T_last)) 
+    # 制約
+    # TODO:k,l, iの調整をする
+    @constraint(model, c1[k = 1:n], distance_matrix_first[k] <= v_c*T_first + M*(1-w[1,k]))
+    @constraint(model, c2[k = 1:n, l = 1:n, i=2:n ], distance_matrix[k,l] <= v_c*T[i]+M*(1-w[i,k])+M*(1-w[i-1,l]))
+    @constraint(model, c3[k = 1:n], distance_matrix_last[k] <= v_c*T_last + M*(1-w[n, k]))
+    @constraint(model, c81[i = 1:n], (Q[1,i] == sum(w[i,j]*q[1,j] for j in 1:n)))
+    @constraint(model, c82[i = 1:n], (Q[2,i] == sum(w[i,j]*q[2,j] for j in 1:n)))
+    @constraint(model, c9[i = 1:n], 1 == sum(w[i,:])) # for i
+    @constraint(model, c10[j = 1:n], 1 == sum(w[:, j])) # for j
+    if have_timewindow
+        @constraint(model, w1[i = 1:n], (T_first+sum(T[j+1] for j in 1:i-1))<=U[2,i])
+        @constraint(model, w2[i = 1:n], U[1,i]<=(T_first+sum(T[j+1] for j in 1:i-1)))
+        @constraint(model, w3[i = 1:n], (U[1,i] == sum(w[i,j]*u[1,j] for j in 1:n)))
+        @constraint(model, w4[i = 1:n], (U[2,i] == sum(w[i,j]*u[2,j] for j in 1:n)))
+    end
+    set_time_limit_sec(model, 10800.0)
+    elapsed_time = @elapsed optimize!(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    @show elapsed_time # cputime
+    return value.(w)
 end
 
 function MISOCP_solverd_first_seq(q, u)
@@ -231,7 +369,7 @@ function calc_score(w, q, u)
         @variable(model, U[1:2,1:n]>=0)
     end
 
-    @objective(model, Min,  sum(t) + (T_1+sum(T)+T_last))
+    @objective(model, Min,  sum(t) + 1.000001*(T_1+sum(T)+T_last))
 
     # Qの列どうやってとる？？
     @constraint(model, c0[i = 1:n], t[i]<=a)
@@ -263,7 +401,7 @@ function calc_score(w, q, u)
     try
         score = objective_value(model)
     catch
-        score = 100000 # 10^14でかく#TODO: ここの値の調整必要
+        score =infeasible_score # 10^14でかく#TODO: ここの値の調整必要
     end
     return score, p_to, p_land
 end
@@ -276,7 +414,9 @@ function make_new_seq(seq)
     if rand()>0.8
         n_seq = simple_swap(seq)
     else
-        n_seq = two_opt(seq)
+        # n_seq = two_opt(seq)
+        n_seq = simple_swap(seq)
+        n_seq = simple_swap(n_seq)
     end
     return n_seq
 end
@@ -317,8 +457,6 @@ function two_opt(seq)
 end
 
 function output( p_to, p_land, seq, q)
-
-
     p2 = deepcopy(p1)
     pto_value = value.(p_to)
     pland_value = value.(p_land)
@@ -371,6 +509,33 @@ function output( p_to, p_land, seq, q)
         end
     end
     display(p2)
+    return p2
+end
+
+function output_simple_TSP( seq, q)
+    """
+    droneなしのTSPを可視化します。
+    """
+    p3 = deepcopy(p1)
+    Q_value =make_Q(seq, q)
+    tlvector = matrix_to_vector(seq)
+    # intial to the first takeoff
+    plot!(p3, [p_o[1], Q_value[1, 1]], [p_o[2], Q_value[2, 1]],
+    color=:black)
+    # last landing to the final 
+    plot!(p3, [Q_value[1, n], p_f[1]], [Q_value[2,n], p_f[2]],
+    color=:black)
+    # plot!(pl, [targets[i,1], targets[i+1,1]], [targets[i,2],targets[i+1,2]], color=:black, linewidth=1, linestyle=:dot, label=\"\")
+
+    for k = 1:n-1
+        point = tlvector[k]
+        # ship-only route 
+        plot!(p3, [Q_value[1, k], Q_value[1, k+1]],
+            [Q_value[2, k], Q_value[2, k+1]],
+            color=:black, )
+    end
+    display(p3)
+    return p3
 end
 
 function output_easy(seq, score)
@@ -423,6 +588,7 @@ function matrix_to_vector(matrix)
             end
         end
     end
+    println("vec", vector)
     return vector
 end
 
@@ -430,7 +596,9 @@ function make_Q(seq, q)
     """
     Q:
     """
+    println(seq)
     vec = matrix_to_vector(seq)
+    println(vec)
     Q = zeros(Float64, 2,length(vec))
     for i in 1:length(vec)
         idx_Q = vec[i]
@@ -454,4 +622,35 @@ function calc_distance(q)
     return matrix
 end
 
+function calc_distance_with(q, point)
+    n = size(q, 2)
+    vector = zeros(Float32, n) 
+    for i in 1:n
+        vector[i] = norm(q[:,i] - point)
+    end
+    return vector
+end
+
+function save_figure(dir_path::String, pic_name::String, plt)
+    """
+    Plot instance pltをfile_pathとして保存する関数。
+    """
+    file_path = string(dir_path, "/", pic_name, ".png")
+    println("save picture to: ", file_path)
+    display(plt)
+    savefig(file_path)
+    print("save_complete!")
+end
+
+function write_to_csv(csv_path, n, compute_time, obj_value, n_iter, is_SA, is_infeasible,status,  data_path)
+    seed = data_path[end-7:end-4] # seed値は必ず4桁を補償
+    df  = DataFrame(n = [n], compute_time = [compute_time], obj_value = [obj_value], n_iter = [n_iter], is_SA = [is_SA], is_infeasible = [is_infeasible], status = [status],seed = [seed])
+    CSV.write(csv_path, df, append = true, writeheader = false)
+end
+
+
 main()
+# q,u = input()
+# seq = make_first_seq(q,u)
+# p3 = output_simple_TSP(seq, q)
+# save_figure("temp/pictures", "easy_no_drone_answer", p3)
