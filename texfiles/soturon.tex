@@ -6,37 +6,37 @@
 \usepackage{comment}
 \usepackage{amsthm}
 \usepackage{amsmath}
-
+\usepackage{optidef}
 \usepackage[dvipdfmx]{hyperref}
 \usepackage{pxjahyper}
 \setcounter{tocdepth}{3}%目次をサブセクションまで表示
-
-\bibliographystyle{abbrv}
+\usepackage{multirow}
+% \usepackage{caption}
 
 
 \newtheoremstyle{mystyle}%   % スタイル名
-    {}%b                     % 上部スペース
-    {}%                      % 下部スペース
-    {\normalfont}%              % 本文フォント
-    {}%                      % 1行目のインデント量
-    {\bfseries}%             % 見出しフォント
-    {.}%                     % 見出し後の句読点
-    { }%                     % 見出し後のスペース
-    {\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+{}%b                     % 上部スペース
+{}%                      % 下部スペース
+{\normalfont}%              % 本文フォント
+{}%                      % 1行目のインデント量
+{\bfseries}%             % 見出しフォント
+{.}%                     % 見出し後の句読点
+{ }%                     % 見出し後のスペース
+{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
 
 \theoremstyle{mystyle}
 \newtheorem{mythm}{定理}[section]
 
 \makeatletter
 \renewenvironment{proof}[1][\proofname]{\par
-  \pushQED{\qed}%
-  \normalfont \topsep6\p@\@plus6\p@\relax
-  \trivlist
-  \item\relax
-  {\bfseries
-  #1\@addpunct{.}}\hspace\labelsep\ignorespaces
+	\pushQED{\qed}%
+	\normalfont \topsep6\p@\@plus6\p@\relax
+	\trivlist
+	\item\relax
+	{\bfseries
+		#1\@addpunct{.}}\hspace\labelsep\ignorespaces
 }{%
-  \popQED\endtrivlist\@endpefalse
+	\popQED\endtrivlist\@endpefalse
 }
 \makeatother
 
@@ -148,7 +148,7 @@
 % details are written in  /usr/share/texmf/tex/plain/base/plain.tex
 % \newdimen\zhige \zhige=0pt
 % \def\chige#1{{\setbox\zhige\hbox{#1}\ifdim\ht\zhige=1ex\accent24 #1%
-%  \else\ooalign{\unhbox\zhige\crcr\hidewidth\char24\hidewidth}\fi}}
+		%  \else\ooalign{\unhbox\zhige\crcr\hidewidth\char24\hidewidth}\fi}}
 
 \def\cc{\mbox{\boldmath $c$}}
 \def\d{\mbox{\boldmath $d$}}
@@ -244,717 +244,783 @@
 \newcommand{\oc}{\overline{\c}}
 \newcommand{\ob}{\overline{\b}}
 \newcommand{\cO}{\mathcal{O}}
-\title{{\large 令和4年度　学士論文}\\ \vskip\baselineskip
-taitoru\\タイトル}
+\title{{\large 令和5年度　学士論文}\\ \vskip\baselineskip
+	時間制約付きcarrier vehicle routing問題に対する\\二次錐計画問題を用いた解法}
 \author{東京工業大学　情報理工学院　数理・計算科学系\\
-学籍番号　19B31048\\
-脇田康平\\
-指導教員 山下 真 教授\\
+	学籍番号　19B31048\\
+	脇田康平\\
+	指導教員 山下 真 教授\\
 }
-\date{2022年2月27日}
+\date{2023年2月27日}
 \begin{document}
-
-\maketitle
-
-\tableofcontents
-\clearpage
-
-\section{はじめに}\label{sec:introduction}
-% 研究の大まかな内容
-% 研究の意義
-% 論文の構成
-
-本論文の構成は以下である。
-第\ref{sec:preliminaries}節では、二次錐計画問題(SOCP)に関する前提知識として二次錐計画問題と内点法アルゴリズム、中心パスなどについて説明をする。
-第\ref{sec:Deformation_relax_and_penalty}節では、緩和法とペナルティ法に基づく変形について説明する。
-第\ref{sec:Numerical_Experience}節では、数値実験を行った結果を示し、各手法の評価を行う。
-第\ref{sec:Conclusion}節で、まとめを行う。
-
-\subsection{記法}\label{sec:notation}
-
-
-この論文で扱う記法を述べる。
-\begin{itemize}
-  \item $\|\cdot\|$はユークリッドノルムとする。
-  \item 行列$\A \in \Real^{k \times m} , \B \in \Real^{k \times n}$を横方向につなげてできる新たな行列$\C \in \Real^{k \times (m+n)}$を
-  $ \C = (\A, \B)$ と表記する。
-  \item 行列$\A \in \Real^{m \times k} , \B \in \Real^{n \times k}$を縦方向につなげてできる新たな行列$\C \in \Real^{(m+n) \times k}$を
-$    \C = (\A ; \B)$ と表記する。
-  \item 上付き添え字 $T$ は行列やベクトルの転置を示す。
-  \item $\x^T \y$はベクトル$\x,\y \in \Real^n$の内積$\sum_{i=1}^n x_i y_i$である。
-  \item ２つのベクトル$\x , \y \in \Real^n$に対して、$\x \circ \y$を次のように定義する。\\
-$\x \circ \y = \left(
-  \begin{array}{c}
-    \x^T \y \\
-    x_0 y_1 + y_0 x_1 \\
-    \vdots \\
-    x_0 y_n + y_0 x_n
-  \end{array} \right)
-  $
-  \item ２つの行列$\A , \B$に対して$\A \oplus \B =
-  \begin{pmatrix}
-    \A & \0 \\
-    \0 & \B \\
-  \end{pmatrix}$
-  \item $n$次元のベクトル$\e \in \Real^n$かつ、$1$番目の要素のみが$1$で、その他の要素は全て$0$であるベクトルを$\e_n = (1 ; \0)$と表す。
-  \item 対角成分以外は0で、対角成分は1行目が$1$,それ以外が$-1$である行列を$\R_n \in \Real^{n \times n}$とする。
-  $
-  \R_n =
-  \begin{pmatrix}
-    1 & 0 & \cdots & 0 \\
-    0 & -1 & \cdots & 0 \\
-    \vdots & \vdots & \ddots & \vdots \\
-    0 & 0 & \cdots & -1 \\
-  \end{pmatrix}
-  $
-\end{itemize}
-
-\clearpage
-
-\section{先行研究}\label{sec:preliminaries}
-% MISOCPで定義する論文と焼きなましの論文の二つを紹介する。
-
-\section{問題設定}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
-\subsection{対象とする問題について}\label{sec:problem_settings}
-本研究が対象とするCVTSPWT(Carrier Vehicle Travering Salesman Problem with Time Window)についての説明を与える。\\
-この問題では、速度$V_c$であるcarrierと 速度$V_v$であるvehicleの二つの輸送機器を用いる。ただし, $V_c< V_v$\\
-CVTSPWTとは以下の条件を満たすcarrierの経路のうち、スタート地点($q_s$)からゴール地点($q_f$)まで最も少ない時間で航行できる経路とその時間を求める問題である。\\
-0. どの目的地にも少なくとも一回訪れる。その際、訪れるのはvehicleでもcarrierでも良い\\
-1. ある目的地iには$(u_{i1}, u_{i2})$の間の時間に訪れる。\\
-2. vehicleには一度に航行できる距離$a$があり、これを超えてはいけない。航行可能距離は、carrierと同じ座標に来たら再び$a$に戻る。\\
-4. vehicleはcarrierから離陸して着陸するまでの間に一箇所しか訪れられない。
-
-
-\subsection{混合整数二次錐計画問題}\label{sec:Second_Order_Cone_Programming}
-
-まずは、混合整数二次錐計画問題の定義について述べる。\\
-% Kを用いた定義
-%TODO:
-本論文ではこれをユークリッドノルムを用いた以下の形に変形して用いる。
-% 変形した最適化問題の定義
-\begin{align}
-	\begin{array}{rcl}
-		\min & : & \f ^T\x \\
-		\text{subject to} & : &||\A_i x +\b_i||_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
-		& & \F\x=\g\\
-		& & \x_i \in \mathbb{Z}, (i=1,\dots, n)
-	\end{array}
-\end{align}
-ここで、$f \in \Real^n , \A, \b, \c, \d$が定数で$x \in \Real^n$が目的変数である。
-% 混合整数の場合の定式化
-% 混合整数の場合、内点法などのSOCで使えるアルゴが使用できないことを説明
-SOCPは目的変数が連続であるため内点法などで最適値を求められるが、MISOCPは変数が離散であるため組合せ最適化のアルゴリズムを用いて最適値を求める必要がある。
-\subsection{MISOCPとして定式化}\label{sec:Deformation_relax}
-% cplexの解法は数値実験章で比較するのみ
-% 誰の既存研究の結果を用いているかを必ず明記する。
-ここでは、対象問題を解くためのモデルをMISOCPを用いて定式化する。これは、上でのべた先行研究の拡張である。\\
-まずは定数を定義する。\\
-	\begin{description}
-	\item[$n$]number of target points
-	\item[$q_i$] set of target points coodinates
-	\item[$q_{min}$] vector of the minimum of the $q_i$
-	\item[$q_{max}$]  vector of the maximum of the $q_i$
-	\item[$V_v$] vehicle speed
-	\item[$V_c$] carrier speed
-	\item[$a$] vehicle operational range
-	\item[$p_o$]coordinates of the starting point of the trajectory
-	\item[$p_f$]coordinates of the ending point of the trajectory
-\end{description}
-次に決定変数を定義する。
-	\begin{description}
-	\item[$Q_i$] coodinates in the i th target point to be visited
-	\item[$w_{ij}$] binary variables taking 1 if target point j is visited in position j
-	\item[$p_{to, i}$] coordinates of the takeoff point for the visit of $Q_i$
-	\item[$p_{l, i}$] coorinates of the landing point after the visit of $Q_i$
-	\item[$t_{i,1}$] time taken by the vehicle from $p_{to, i}$ to reach $Q_i$
-	\item[$t_{i,2}$] time taken by the vehicle from$Q_i$to reach $p_{l, i}$
-	\item[$t_i$] time taken by the carrier from $p_{to, i}$  to reach $p_{l, i}$
-	\item[$T_1$] time take by the carrier from $p_o$to reach  $p_{to, 1}$
-	\item[$T_i$] time take by the carrier from $p_{l, i-1}$to reach  $p_{to, i}$
-	\item[$T_{n+1}$] time take by the carrier from $p_{l,n}$to reach  $p_{f}$
-	%TODO: uの定義
-\end{description}
- MISOCPモデルを定義する。\\
- \begin{align}
- 	\begin{array}{rcl}
- 		\min & : & \sum_{i=1}^{n}t_i+\sum_{i=1}^{n+1}T_i\\
- 		\text{subject to} & : &\|\A_i x +\b_i\|_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
- 		& & \F\x=\g\\
- 		& & \x_i \in \mathbb{Z}, (i=1,\dots, n)
- 	\end{array}
- \end{align}
-
-\section{提案手法}\label{sec:SimulatedAnnealing}
-\subsection{焼きなまし法の定義}
-
-焼きなまし法(Simulated Annealing)とは、大域的最適解を求めるためのメタヒューリスティクスの一種である。 局所的最適解を避けるために、目的関数値が一時的に悪くなるような状態へも遷移するという特徴がある。
-\subsection{提案手法}
-% ヒューリスティックを強調した章の名前にしてもいいかも
-% 問題を２ステップに分けて考える。辿る順番を求めるパートと、位置を決めるパート
-% 辿る順番を決めるのにSAを用いる
-% 辿る順番は組合せ最適化問題であり、選び方が途方もなくあるため全部見るのは困難
-%　よってこのパートはヒューリスティックを用いて克服する
-% 初期回の生成を緩和問題をソルバーで解くことにより効率化できる旨も記す。
-%
-\section{数値実験}\label{sec:Numerical_Experience}
-この節では、前節で導入した
-\eqref{NoinnerpointSOCP},\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}
-の3つのモデルで内点のないSOCPを求解し、数値的に比較を行う。
-ここでは、SOCPを解くソルバーとして
-SDPT3-4.0~\cite{toh2012implementation}を用いた。
-詳しい数値実験の実行環境は表\ref{table:Execution_environment}の通りである。
-\begin{table}[hbtp]
-  \caption{実行環境}
-  \label{table:Execution_environment}
-  \centering
-  \begin{tabular}{|c|c|}
-    \hline
-    プロセッサ  & 1.6 GHz デュアルコアIntel Core i5 \\
-    \hline
-    メモリ  & 8 GB 2133 MHz LPDDR3 \\
-    \hline
-    OS  & macOS Big Sur バージョン11.6 \\
-    \hline
-    実装言語  &  MATLAB\_R2021b \\
-    \hline
-    ソルバー & SDPT3-4.0 \\
-    \hline
-  \end{tabular}
-\end{table}
-
-\subsection{定数の設定}\label{sec:Deformation_to_SDPT3solver}
-今回使用したSDPT3では、次のような形式が入力形式であるため、この形式に沿うように入力をする必要がある
-%\modify{。~\cite{toh2012implementation}。}{
-\cite{toh2012implementation}。
-%}
-\begin{align}
-  \begin{array}{rcll}
-    \min & : & \displaystyle{\sum_{j=1}^{n_s}} \left[
-    \langle c_j^s , x_j^s \rangle - v_j^s \text{log det}  (x_j^s)
-     \right] & + \ \displaystyle{\sum_{i=1}^{n_q}} \left[
-     \langle c_i^q , x_i^q \rangle - v_i^q \text{log det}  (x_i^q)
-      \right] \\
-      & & + \langle c^l , x^l \rangle \ -
-      \ \displaystyle{\sum_{k=1}^{n_l}} v_k^l \text{log} x_k^l & + \ \langle
-       c^u , x^u \rangle \\
-    \text{subject to} & : & \displaystyle{\sum_{j=1}^{n_s}} A_j^s (x_j^s)　+ \ \displaystyle{\sum_{j=1}^{n_q}} A_j^q (x_j^q) & + \ A^l x^l + \ A^u x^u = b \\
-    & & x_j^s \in \KC_s^{s_j} \ \forall j \ , \ x_i^q \in \KC_q^{q_i} \ \forall i , & x^l \in \KC_l^{n_l} \ , \ x^u \in \Real^{n_u} \\
-  \end{array}
-\end{align}
-
-この問題に対応する双対問題は以下の問題である。
-\begin{align}
-  \begin{array}{rcll}
-    \min & : & \displaystyle{\sum_{j=1}^{n_s}} \left[
-    \langle c_j^s , x_j^s \rangle - v_j^s \text{log det}  (x_j^s)
-     \right] & + \ \displaystyle{\sum_{i=1}^{n_q}} \left[
-     \langle c_i^q , x_i^q \rangle - v_i^q \text{log det}  (x_i^q)
-      \right] \\
-      & & + \langle
-      c^l , x^l
-       \rangle \ - \ \displaystyle{\sum_{k=1}^{n_l}} v_k^l \text{log} x_k^l & + \ \langle
-       c^u , x^u \rangle \\
-  \end{array}\\
-  \begin{array}{lllllllll}
-    \text{subject to} & : & (A_j^s)^T y & + & z_j^s & = & c_j^s, & z_j^s \in \KC_s^{s_j} & (j = 1,...,n_s) \\
-    & & (A_i^q)^T y & + & z_i^q & = & c_i^q, & z_i^q \in \KC_q^{q_i} & (i = 1,...,n_q) \\
-    & & (A^l)^T y & + & z^l & = & c^l, & z^l \in \KC_l^{n_l} & \\
-    & & (A^u)^T y &   &     & = &  c^u, & y \in \Real^m & \\
-  \end{array}
-\end{align}
-
-ここで、$x = (x_1^s , \dots , x_{n_s}^s , x_1^q , \dots , x_{n_q}^q , x^l)$,
-ただし$x_1^s , \dots , x_{n_s}^s$は対称行列,
-$x_1^q , \dots , x_{n_q}^q , x^l$はベクトル
-%\modify{}{である}。
-である。
-
-一般に
-$K$を自己双対なユークリッド空間上の閉凸錐、$A:X \to \Real^m$を線形写像、
-$A^*$を$A$の随伴行列、$b \in \Real^m$、$c \in X$とする。
-これらを用いるとソルバーの入力標準形は、以下の形式で簡潔に表すこともできる。
-\begin{align}
-	\label{eq:SDPT3-input}
-  \begin{array}{rcc}
-    \min & : & \langle \c , \x \rangle \\
-    \text{subject to} & : & \x \in \KC \\
-    & & \A \x = \b
-  \end{array} & \quad
-  \begin{array}{rcc}
-    \max & : & \b^T \y \\
-    \text{subject to} & : & \z \in \KC \\
-    & & \A^* \y + \z = \c
-  \end{array}
-\end{align}
-
-今回のSOCP
-\eqref{NoinnerpointSOCP},\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}
-をソルバーに入力するするためには、上記の形に変形する必要がある。
-まず、目的関数に関しては内積以外を$0$に設定すれば良い。
-制約は、二次錐制約に関しては$z_i^q \in \KC_q^{q_i}$、
-不等式制約に関しては$z^l \in \KC_l^{n_l}$を用いる。%等式制約に関しては$y \in \Real^m$を使う。
-
-例えば、\eqref{NoinnerpointSOCP}を入力するためには、
-双対問題を対象として以下のように設定をする。
-まず、変数は全てSDPT3の$\y$で扱うこととし、$\y = \x$とする。
-次に、不等式制約は二次錐制約として対応させる。
-具体的には、不等式制約$\c_i^T \x + d_i \ge \|\A_i \x + \b_i\|$は
-\begin{align}
-  \begin{pmatrix}
-    - \c_i^T \\
-    - \A_i \\
-  \end{pmatrix}
-  \x + \z_i^q =
-  \begin{pmatrix}
-    d_i \\
-    \b_i \\
-  \end{pmatrix} , \z_i^q \in \KC_q^{q_i} \ (i = 1 , \dots , m)
-\end{align}
-の形に変形することで、$(A_i^q)^T y + z_i^q = c_i^q, z_i^q \in \KC_q^{q_i} (i = 1,...,n_q)$の二次錐制約に対応させる。
-また、等式制約$\F \x = \g$は
-$A^u = \F^T , c^u = \g_u$として
-\begin{align}
-  (A^u)^T y = c^u
-\end{align}
-の制約に対応させる。
-同様の手順により\eqref{NoinnerpointSOCP:penalty},\eqref{NoinnerpointSOCP:relax}も
-SDPT3に入力可能である。
-
-\subsection{初期点とパラメータの設定}\label{sec:parameter_settings}
-
-SDPT3は以下のような引数をとる。
-\begin{center}
-  \text{[obj,X,y,Z,info,runhist] = sqlp(blk,At,C,b,OPTIONS,X0,y0,Z0)}
-\end{center}
-ここで、blkはSOCPの錐を表すブロック構造のセル配列、
-At, C, b はSOCPの入力行列などを表す。また、
-OPTIONSはSDPT3が用いるパラメータであり、
-X0 , y0 , Z0は内点法の初期点を表す。
-
-今回の数値実験では、OPTIONS,X0,y0,Z0はSDPT3が設定するデフォルト値を用いた。
-特に、デフォルトの場合のy0の初期点は、次のように$(-1,1)$から発生する$n$次元正規分布乱数ベクトルで設定される。
-\begin{align}
-  y0 = \text{randn}(n,1)
-\end{align}
-
-得られた最適解の精度を評価するために、いくつかの定義を行う。まず、
-\begin{align}
-  \lambda_{\min,\KC} (\x) = \min \left\{ \underset{j=1,\cdots,n_s}{\min} \lambda_{\min} (x_j^s) , \underset{k=1,\cdots,n_q}{\min} \lambda_{\min,q} (x_k^q) , \underset{h}{\min} (x_h^l) \right\}
-\end{align}
-とする。ここで、あるベクトル$\a = (a_1 ; \overline{\a})$に対して
-$\lambda_{\min,q} (\a) = a_1 - \|\overline{\a}\|_2$,
-ある対称行列$\A$に対して$\lambda_{\min} (\A) = \A$の最小の固有値とする。
-また、ベクトル$\x = (x_1 , \cdots , x_n) , \z = (z_1 , \cdots , z_n) \in \Real^n$に対して、
-$\|\x\|_1 = \underset{i=1,\cdots,n}{\max} |x_i|$,
-$\langle \c,\x \rangle = \c^T \x$
-とする。
-これらを踏まえて、以下の6つを定義する。
-これらはDIMACS error~\cite{mittelmann2003independent}とも呼ばれる。
-\begin{align}
-			\text{error1} &= \frac{\|\A \x - \b\|}{1 + \|\b\|_1} &
-			\text{error2} &= \max \{ 0, - \frac{\lambda_{\min , \KC} (\x)}{1 + \|\b\|_1} \} \\
-			\text{error3} &= \frac{\|\A^* \y + \z - \c\|}{1 + \|\c\|_1} &
-			\text{error4} &= \max \{ 0, - \frac{\lambda_{\min , \KC} (\z)}{1 + \|\b\|_1} \} \\
-			\text{error5} &= \frac{\langle \c,\x \rangle - \b^T \y}{1 + \langle \c,\x \rangle + \b^T \y} &
-			\text{error6} &= \frac{\langle \x,\z \rangle}{1 + \langle \c,\x \rangle + \b^T \y}
-\end{align}
-これらのDimacs errorには、以下の性質があることが知られている。
-\begin{itemize}
-  \item error2とerror4は、得られた解のうち$\x , \z \in \KC$であるならば、ともに0をとる。
-  よって、得られた解の中で$\x,\z$が二次錐制約を満たしているかどうかは、error2とerror4の数値で確認することができる。
-  \item 得られた解のうち$\x , \z \in \KC$が実行可能な場合、厳密な計算式では
-  error5 $=$ error6となる。しかし、ソルバーで出力される解は数値誤差を含むので、必ずしも一致するとは限らない。
-  \item error5は双対ギャップを表しており、出力された解が厳密に実行可能解であれば弱双対定理より$0$以上である。しかし、数値誤差の影響により、error5は負の値となる可能性がある。
-\end{itemize}
-
-これらを用いると、閾値を$\epsilon>0$としたときの
-SDPT3の終了条件は以下のように示すことができる。
-\begin{center}
-  終了条件： \ $\max\{\text{error}1, \text{error}2, \dots, \text{error}6\} < \epsilon$
-\end{center}
-この条件を満たすまで、探索方向による計算を続け、条件を満たした時点で、その点を最適解として出力し、反復を終了する。
-なお、SDPT3では、デフォルトの閾値は$\epsilon = 10^{-8}$である。
-
-\subsection{テスト問題の生成方法}\label{sec:Problem_Generation}
-
-%\red{\eqref{NoinnerpointSOCP}の$\A, \b, \c$ などを乱数などでどう生成しているかが書かれていない。}
-
-生成する問題\eqref{NoinnerpointSOCP}については非有界であると
-数値誤差が非有界に起因するか内点がないことに起因するか判別が困難であるため、
-どの問題でも有界制約を追加し、必ず有界な問題となるように設定した。
-これにより、必ず最適解が存在するように問題を生成した。
-
-具体的には、まず$i = 1 , \dots , m-1$に対して
-$\A_i \in \Real^{n \times n_i}, \b_i \in \Real^n, \c_i \in \Real^{n_i}$
-を正規分布からなる乱数を要素に持つ変数として設定する。MATLABでは以下のように設定する。
-$\overline{x} = \text{randn} (n,1) \in \Real^n$に対しては
-\begin{align}
-  A\{i\} &= \text{randn}(n\_i,n) , b\{i\} = \text{randn}(n\_i,1) ,
-  c\{i\} = \text{randn}(n,1) , \\
-  d\{i\} &= -c\{i\}' \overline{x} + \text{norm}(A\{i\}' \overline{x}+b\{i\}) + 10
-\end{align}
-とする。このようにすることで、$i = 1 , \dots , m-1$の場合の
-不等式制約を満たす変数$\overline{x}$が必ず存在することになる。
-次に、$\A_m \in \Real^{n \times n_i}, \b_m \in \Real^{n}, \c_m \in \Real^{n_i}$と、
-ある$\overline{\x} \in \Real^{n_i}$が満たすべき不等式制約
-$\c_i^T \overline{\x} + d_i \ge \|\A_i \overline{\x} + \b_i \|$に対して、
-$\A_m = \I_m, \b_m = \0, \c_i = \0$とすることで、この不等式は
-\begin{align}
-	\0 + d_m \ge \|\I_m \x + \0\| = \|\x\|
-\end{align}
-となる。よって、$d_m = \|\overline{\x}\|+1$と設定すれば、
-$i=m$の場合の不等式制約は$\|\overline{\x}\|+1 \ge \|\x\|$となるので、有界な問題となる。
-この場合、MATLABでは$\overline{x} = \text{randn} (n,1) \in \Real^n$に対して以下のように設定する。
-\begin{align}
-  A\{m\} = \text{eye}(n) , b\{m\} = \text{zeros}(n,1) ,
-  c\{m\} = \text{zeros}(n,1) ,
-  d\{m\} = \text{norm} (\overline{x})^2 + 1
-\end{align}
-
-\subsection{実験結果}\label{sec:Numerical_Result}
-実験結果について、まずは計算時間と精度で評価をし、続いて
-反復回数による評価を行う。また、ペナルティ係数の設定が与える影響についても、
-検討する。
-\subsubsection{計算時間と精度の評価}\label{sec:Evaluation_CPUtime_and_accuracy}
-
-この節では、3手法による計算時間とDimacs error値の違いに着目をする。
-表\ref{table:Experimental_Result}は、問題のサイズを変更した場合の各手法で求解までにかかった計算時間とDimacs errorの数値を表している。
-問題のサイズを決定する$m,n_i,\overline{m}$の3つを変えて数値実験を行った。
-なお、ペナルティ法のペナルティ係数は$10^2$とした。
-
-表\ref{table:Experimental_Result}では、%この表は、６つのブロックに分かれている。
-%サイズを６種類に変更して実験を行った。
-各ブロックにおいて横の行が各手法に対応しており、
-縦の列がそれぞれSDPT3に入力するように変換した後の変数の数、制約の数、計算時間(秒)、Dimacs errorに対応している。
-% ここで、計算時間はCPUがかかった全体の時間としている。
-
-%\begin{minipage}
-\begin{table}[h]
-  \caption{各手法での計算時間とDimacs errorの数値}
-  \label{table:Experimental_Result}
-  %\centering
-  \scriptsize
-  %\small
-  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 3,n_i = 5,\overline{m}= 3$}\\
-    %\hline
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 10 & 0.9 & 1.44E-11 & 0.00E+0 & 3.33E-11 & 0.00E+0 & 5.96E-09 & 6.58E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 10 & 12 & 1.07 & 4.21E-16 & 0.00E+0 & 1.58E-11 & 0.00E+0 & 5.95E-09 & 7.57E-09 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 39 & 16 & 1.37 & 9.14E-15 & 0.00E+0 & 3.18E-11 & 0.00E+0 & 7.54E-09 & 9.40E-09 \\
-    %\hline
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 10,n_i = 10,\overline{m} = 10$}\\
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 31 & 1.14 & 1.19E-12 & 0.00E+0 & 1.18E-11 & 0.00E+0 & 8.53E-09 & 8.94E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 24 & 33 & 1.24 & 4.86E-15 & 0.00E+0 & 3.93E-12 & 0.00E+0 & 4.72E-09 & 5.70E-09 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 218 & 51 & 2.69 & 2.55E-14 & 0.00E+0 & 1.23E-11 & 0.00E+0 & 5.56E-09 & 7.60E-09 \\
-    %\hline
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 30,n_i = 10,\overline{m} = 20$}\\
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 71 & 2.35 & 5.22E-13 & 0.00E+0 & 6.90E-12 & 0.00E+0 & 7.07E-09 & 7.53E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 54 & 73 & 3.23 & 1.73E-14 & 0.00E+0 & 3.18E-12 & 0.00E+0 & -1.74E-09 & 6.79E-09 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 548 & 121 & 6.39 & 5.60E-14 & 0.00E+0 & 6.93E-12 & 0.00E+0 &
-    6.34E-09 & 8.53E-09 \\
-    %\hline
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 20,n_i = 20,\overline{m} = 40$}\\
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 101 & 3.19 & 6.54E-12 & 0.00E+0 & 8.07E-12 & 0.00E+0 & 8.57E-09 & 9.78E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 64 & 103 & 3.96 & 4.07E-14 & 0.00E+0 & 1.49E-12 & 0.00E+0 & 4.45E-09 & 9.26E-09 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 1248 & 161 & 9.16 & 5.95E-14 & 0.00E+0 & 2.07E-12 & 0.00E+0 & 4.84E-09 & 7.09E-09 \\
-    %\hline
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 50,n_i = 50,\overline{m} = 60$}\\
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 171 & 4.59 & 2.40E-11 & 0.00E+0 & 1.67E-12 & 0.00E+0 & 7.65E-09 & 8.52E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 114 & 173 & 4.10 & 1.29E-07 & 0.00E+0 & 1.10E-06 & 0.00E+0 & -7.03E-02 & 3.05E-04 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 5568 & 281 & 48.35 & 9.30E-13 & 0.00E+0 & 6.97E-13 & 0.00E+0 & 6.72E-09 & 9.22E-09 \\
-    %\hline
-    \cline{1-10}
-    \multicolumn{10}{|c|}{$m = 100,n_i = 100,\overline{m} = 80$}\\
-    \cline{1-10}
-    & 変数の数 & 制約の数 & 計算時間(秒) & error1 & error2 & error3 & error4 & error5 & error6 \\
-    %\hline
-    \cline{1-10}
-    通常の内点法  & 4 & 261 & 6.21 & 2.03E-10 & 0.00E+0 & 3.96E-13 & 0.00E+0 & 5.26E-09 & 5.96E-09 \\
-    %\hline
-    \cline{1-10}
-    ペナルティ法 & 184 & 263 & 6.57 & 2.80E-07 & 0.00E+0 & 2.70E-07 & 0.00E+0 & -3.42E-02 & 6.20E-04 \\
-    %\hline
-    \cline{1-10}
-    緩和法 & 18088 & 441 & 375.38 & 7.75E-13 & 0.00E+0 & 2.69E-13 & 0.00E+0 & 6.32E-09 & 8.02E-09 \\
-    %\hline
-    \cline{1-10}
-  \end{tabular}
-\end{table}
-
-表\ref{table:Experimental_Result}から分かるように、
-計算時間は、通常の内点法とペナルティ法ではどのサイズの問題でもほぼ同じ計算時間であるが、
-緩和法は問題の規模が大きくなるとかなり長い計算時間を要する。
-これは、第\ref{sec:Deformation_relax}節で述べたように、生成される変数と制約の数が関係していることが分かる。
-
-次に、error値に着目する。
-まず、error2とerror4について検討する。
-どの実験結果においてもerror2とerror4が$0$に近い値となっており、全ての手法で実行可能解を求められていることが分かる。
-
-また、等式条件とDimacs errorの対応について考えてみる。
-error1は、主問題における等式制約に関する数値誤差、
-error3は双対問題における等式制約に関する数値誤差、
-つまりどれくらい等式制約から逸脱しているかを表現している。
-error1とerror3を見てみると、問題のサイズが小さい場合は、通常の内点法が$10^{-12}$の精度で求解できているのに比べて、ペナルティ法と緩和法は$10^{-14}$という精度で求解を達成できていることがわかる。
-次に、問題のサイズが大きい場合に注目すると、
-通常の内点法の精度は$10^{-12}$と変わらないままとなっている。
-しかし、ペナルティ法は通常の内点法に比べて$10^{-7}$まで精度が落ちてしまっているのに対して、
-緩和法はサイズが大きくなっても$10^{-13}$という良い精度を保ちつつ求解ができていることがわかる。
-
-さらに error5, error6 についても考察を与える。
-error5は双対ギャップに対応している。
-error5を見てみると、通常の内点法と緩和法は$10^{-9}$程度の精度が安定して得られている。
-しかし、ペナルティ法では$m = 30,n_i = 10,\overline{m} = 20$と$m = 50,n_i = 50,\overline{m} = 60$および$m = 100,n_i = 100,\overline{m} = 80$の場合に負の値となっている。
-定理\ref{theorem:weak-duality}より、本来error5は$0$以上の値を取るはずである。
-数値誤差の影響もあり、ペナルティ法では良い解が得られているわけではないことがわかる。
-error6 においても、ペナルティ法では精度値が落ちる場合が確認できる。
-
-\subsubsection{反復回数の評価}\label{sec:Evaluation_itertimes}
-
-次に、各手法の求解に要する反復回数で比較を行う。
-ここでは、ペナルティ係数を$10^3$ に設定した。
-問題のサイズ$m,n_i,\overline{m}$
-をそれぞれ$1$〜$100$の範囲でランダムな値として生成した。具体的には
-\begin{align}
-  m,n_i,\overline{m} = 1 + \text{round}(100*\text{rand})
-\end{align}
-とした。
-その条件の下で、各手法の反復回数を集計しグラフにしたものが
-図\ref{figure:hanpukukaisu}
-である。
-合計50回実験を行い、
-横軸が実験番号を表し、縦軸が3手法の反復回数である。
-
-\begin{figure}[h]
-  \begin{center}
-    \includegraphics[width=100mm,height=65mm]{IterTimePlots2_1.pdf}
-    \caption{各手法の求解に要する反復回数 \label{figure:hanpukukaisu}}
-  \end{center}
-\end{figure}
-
-平均回数は、通常の内点法が24.6回、ペナルティ法が22.2回、緩和法が36.6回となり、
-どの問題においても通常の内点法とペナルティ法に比べて、
-緩和法では最適解を求めるのに多い反復回数を必要とする。
-%\red{この次の文、前の文と矛盾してます。反復回数が多いのは、緩和法のはず。}
-これは、緩和法では決定変数$\y$の数がかなり大きくなるため、他の２手法に比べて
-error値の数値誤差が大きく出てしまうため、全てのerror値が$\epsilon$以下となるという反復の終了条件を満たしにくいことが影響していると考えられる。
-%ペナルティ法では実行可能領域が広がっているため、中心パスを通って最適解にたどり着くための距離を多く必要とするためだと予想される。
-また、大体の場合において若干ペナルティ法の方が通常の内点法に比べて少ない反復回数で
-求解できていることがわかる。
-これは、ペナルティ法では実行可能領域が広がるため、
-通常の内点法に比べてステップ長を少しだけ長く取ることができることが影響していると考えられる。
-
-\subsubsection{yet}\label{sec:Evaluation_penalty_coefficient}
-
-% これ以前に行っていた実験では、ペナルティ係数は全て$10^3$の値に固定していた。
-ここでは、ペナルティ係数を$10^1$〜$10^5$の値からランダムに設定することで、
-ペナルティ係数の大きさが求解にどのような影響があるのかを調べる。
-\ref{sec:Evaluation_itertimes}節と同様に$i = 1 , \cdots , m$に対して
-\begin{align}
-  P_i,\overline{P}_i = 100 + \text{round}(9900*\text{rand})
-\end{align}
-で生成した。
-計算時間と反復回数をまとめたのが図\ref{figure:CPUtime}のグラフである。
-
-\begin{figure}[tp]
-  \begin{center}
-    \includegraphics[width=100mm,height = 65mm]{CPUtimePlots5.pdf}
-    \caption{CPU計算時間と反復回数 \label{figure:CPUtime}}
-  \end{center}
-\end{figure}
-
-%\red{図\ref{figure:CPUtime}は右の軸と左の軸で間違っている？反復回数が整数でない
-% 状況になっている。}
-図\ref{figure:CPUtime}から、以下がわかる。
-求解にかかる反復回数は、ペナルティ係数を変化させた場合でも全て同じ28回となった。
-また、かかるCPU計算時間は、概ね7秒と変化がなく安定していた。
-このことから、ペナルティ係数を変化させたとしても、反復回数と計算時間などに
-大きな影響はないことがわかった。
-より発展的な実験として、目的関数に追加するペナルティ係数を、
-二次関数や対数障壁関数などの異なる関数として追加した場合を考えると、
-また違った結果が得られるのではないかと考えられる。
-
-次にペナルティ係数を変化させた場合のDimacs errorへの影響について考察する。
-表\ref{table:Experimental_Result_penalty_dimacserror}
-は、\eqref{NoinnerpointSOCP:penalty}において
-ペナルティ係数を変化させた場合のDimacs errorの数値を表している。
-ペナルティ係数の具体的な値としては、先ほどと同様$10^1$〜$10^5$の範囲の中で値を変化させて実験を行った。
-
-\begin{table}[tp]
-  \caption{ペナルティ係数を変化させた場合のDimacs errorの数値}
-  \label{table:Experimental_Result_penalty_dimacserror}
-  \centering
-  \scriptsize
-  %\small
-  \begin{tabular}{|c|c|c|c|c|c|c|}
-    \cline{1-7}
-    \multicolumn{7}{|c|}{$m = 50,n_i = 50,\overline{m}= 50$}\\
-    %\hline
-    \cline{1-7}
-    & error1 & error2 & error3 & error4 & error5& error6 \\
-    %\hline
-    \cline{1-7}
-    $P, \overline{P} = 10$ & 1.39E-13 & 0.00E+0 & 6.45E-14 & 0.00E+0 & 4.93E-09 & 5.58E-09 \\
-    %\hline
-    \cline{1-7}
-    $P, \overline{P} = 10^2$ & 6.56E-13 & 0.00E+0 & 4.03E-14 & 0.00E+0 & 4.93E-09 & 5.63E-09 \\
-    %\hline
-    \cline{1-7}
-    $P, \overline{P} = 10^3$  & 9.55E-14 & 0.00E+0 & 5.25E-14 & 0.00E+0 & -1.40E-08 & 6.27E-09 \\
-    %\hline
-    \cline{1-7}
-    $P, \overline{P} = 10^4$  & 1.57E-13 & 0.00E+0 & 3.92E-14 & 0.00E+0 & -2.82E-09 & 5.41E-09 \\
-    %\hline
-    \cline{1-7}
-    $P, \overline{P} = 10^5$  & 9.59E-11 & 0.00E+0 & 3.27E-07 & 0.00E+0 & -0.999 & 1.47E-05 \\
-    %\hline
-    \cline{1-7}
-  \end{tabular}
-\end{table}
-
-表\ref{table:Experimental_Result_penalty_dimacserror}
-からわかるように、error2とerror4がともに0になっていたので、
-全ての場合で出力された解は二次錐に含まれている。
-$P, \overline{P}$の値に着目すると、$P, \overline{P}$の値が$10^2$以下の場合では、どのerror値も全て0に近い値となっていることから、安定して解を求めることができている。
-逆に、$P, \overline{P}$の値が$10^5$のようにかなり大きい場合は、双対ギャップに対応するerror5が負の値となっていることからうまく求解できていないことがわかる。
-$P, \overline{P}$の値が$10^3,10^4$の場合は、error5が負の値となっている。
-しかし、この数値実験では多少の数値誤差を含むので、
-error5がほぼ0に近い値となっていること、および、その他のerror値が$P, \overline{P} = 10,10^2$
-の時と同じ精度で正の値かつ0に近い値となっていることから、
-安定して求解できていると考えられる。
-
-\subsubsection{yet}
-\ref{sec:Deformation_penalty}節で見たように、ペナルティ法では不等式制約に$\xi_i,\overline{\xi}_i$を加えて実行可能領域を広げ、必ず実行可能内点を持つようにすることで数値的安定性の向上を目指した。
-ここで、追加した変数$\xi_i,\overline{\xi}_i$に着目し、
-追加する前の問題\eqref{NoinnerpointSOCP}と
-追加した後の問題\eqref{NoinnerpointSOCP:penalty}で、
-どれくらい実行可能領域が変化しているかを考える。
-
-そのために、$\xi_i,\overline{\xi}_i$の値に着目する。
-今回は、$m = 10, \overline{m} = 10$として数値実験を行った。
-その他は、$n_i = 10 , P = 10^2$と設定した。
-以前の実験と同様に有界性も仮定した。
-得られた具体的な$\xi_i,\overline{\xi}_i$の値は以下である。
-\begin{align}
-  \xi =
-  \begin{pmatrix}
-    2.9638E-12 \\
-    2.9665E-12 \\
-    2.9633E-12 \\
-    2.9655E-12 \\
-    2.9687E-12 \\
-    2.9638E-12 \\
-    2.9643E-12 \\
-    2.9649E-12 \\
-    2.9666E-12 \\
-    2.9597E-12 \\
-  \end{pmatrix}
-  \ , \ \overline{\xi} =
-  \begin{pmatrix}
-    3.7917E-12 \\
-    3.7649E-12 \\
-    3.8559E-12 \\
-    3.5737E-12 \\
-    3.6003E-12 \\
-    3.5165E-12 \\
-    3.8981E-12 \\
-    4.0037E-12 \\
-    3.7935E-12 \\
-    4.0776E-12 \\
-  \end{pmatrix}
-\end{align}
-
-この数値から、各ベクトル$\xi$と$\overline{\xi}$の各成分にばらつきはなく、
-ほぼ同じ値となる結果となった。
-%\red{この次の文、上の結果と逆のことを書いている？}
-また、若干$\overline{\xi}$の成分の方が$\xi$の成分よりも大きい値となった。
-具体的な値としては、$10^{-12}$の精度となっていてほぼ0に近い値である。
-このことから、最適解の領域はあまり広がらず、元の問題\eqref{NoinnerpointSOCP}
-と同じ制約を保ったまま求解できていることがわかる。
-
-%\subsection{(実験結果に対する理論的考察orToh先生にもらったコードの確認)}\label{sec:Consideration_to_Numerical_Expericence}
-%どちらか、余裕があればやりたいです。
-%\red{間に合わないといけないので、このsubsectionはコメントアウトしましょう。}
-
-\clearpage
-
-\section{結論}\label{sec:Conclusion}
-%卒論は適宜バックアップをとっておく！
-本論文では、実行可能内点を持たないようなSOCPを内点法で求解する場合に不安定になりやすいことを解消する方法として、
-緩和法とペナルティ法を施すことで、数値的安定性の向上を目指した。
-第\ref{sec:Numerical_Experience}節の結果から、求解の精度は、
-どの問題のサイズに対しても緩和法が他の手法に比べて有効であることがわかった。
-逆に、求解にかかる反復回数は、緩和法が他の手法に比べて少し多い回数を必要とする結果となった。
-計算時間は、緩和法では変数の数が多くなるため、通常の内点法とペナルティ法に比べて、
-求解までに要する計算時間が長くなることが分かった。
-また、ペナルティ法のみに着目してペナルティ係数を変化させた場合では、ペナルティ係数を$10^4$以上の値だと安定して求解できない結果となったが、
-それより小さい値で設定をすることで良い精度を保ったまま安定して解を求めることができていることが確認された。
-求解にかかる反復回数は問題のサイズを変えても同じ回数を要する結果となった。
-
-今後の課題としては、以下が挙げられる。
-ペナルティ法による変形について、目的関数に追加するペナルティ項を1次関数で追加したので、
-二次関数などの別の関数を使ったペナルティ項を追加して実験をすることが考えられる。
-緩和法については、問題のサイズを大きくした際、求解にかかる時間が急激に増えてしまうというデメリットがわかった。緩和法の定式化に基づく効率的な内点法を設計するなどして、求解にかかる時間を短くすることも今後の課題と考えられる。
-
-%\red{このあとの文章は削除しましょう。どういうコードなのかを説明する必要もありますし、今回の内容とどのくらい関係があるかも、まだ調べてないし。} また、SDPT3の作成者であるToh先生からいただいたコードを用いて同様の実験を行い、比較をすることも今後の課題となる。
-
-\clearpage
-\section*{謝辞}\label{sec:Acknowledgement}
-
-本論文の執筆にあたり、数多くの助言や論文の添削、さらには数多くの質問に対して優しく丁寧に指導して頂きました指導教員の山下真教授に感謝いたします。
-また、ゼミを通じて多くのことを教えてくださった山下研究室、澄田研究室の先生方や先輩方に感謝いたします。
-最後に、学士論文をともに取り組んだ山下研究室、澄田研究室の仲間や友人、支えてくださった家族には感謝いたします。
-
-
-\clearpage
-%\red{参考文献のBibファイルは、修正が必要な個所が多かったので修正しておきました。}
-\begin{small}
-\bibliography{soturon.bib}
-\end{small}
-
-
+	
+	\maketitle
+	
+	\tableofcontents
+	\clearpage
+	
+	\section{はじめに}\label{sec:introduction}
+	%1. ドローンに関する一般的なこと
+	無人航空機、いわゆるドローンは空中を飛行し、荷物を積載できるといった特徴をもつ。
+	そのため、現在では軍事や農業、測量などといった幅広い分野で利用されている。
+	また、人手不足や交通渋滞で困難に直面している物流業界においてもその利用が期待されている。
+	一方、ドローンは空中を飛行するという特性上、大容量のバッテリーを積むことができず、数時間程度しか飛行できないデメリットも持っている。
+	そこで、特に物流業界においては倉庫と目的地を直接ドローンをもちいて荷物を輸送せず、トラックなどの輸送機器にドローンと荷物を載せ、目的地付近でドローンを飛ばして輸送することが多い。
+	この方法では、ドローンを飛ばしていない時間に充電をすることも可能である。
+	ドローンを配送に用いる場合、通常の一種類の輸送機器のみで行う配送計画問題と異なり、ドローンの離着陸地点を決定する必要がある。
+	
+	%2. ドローンを用いた配送計画の一般的なこと（参考文献 5 個以上）
+	%0 離散
+	ドローンを用いた配送計画問題は、市街地などの駐車スペースが限られるような現実の問題に応用しやすい利点もあり、ドローンの離着陸可能座標が予め与えられた離散な問題の場合でも広く研究されている。\cite{luo2017two}
+	%1. 問題の例,シチュエーション
+	しかし、本論文であつかう配送計画問題は、ユークリッド平面上の任意の座標で離着陸が可能であるような設定である。この問題では、離散な場合と異なり、海上での船とヘリコプターなどの応用例が考えられる。\cite{poikonen2020mothership}
+	CVTSPは混合整数二次錐計画問題として定式化できることが示されており\cite{gambella2018vehicle}、branch-and-cutアルゴリズムなどで厳密解を求めることができる。\cite{tamke2021branch}
+	一方CVTSPはNP困難なクラスに属しているため、一般に解くのが難しく、ヒューリスティクスを用いて近似解を求める手法も研究されている。Larasatiらの研究では焼きなまし法をベースにした手法を用いている。\cite{larasati2022integrated}
+	またこの問題は荷物に応じてバッテリー消費量や速度を変化させたり、キャパシティ以内のいくつかの荷物を輸送する問題などアレンジの幅がある。
+	Klaucoらの研究では、droneが飛行できる間であれば二箇所以上の目的地を訪れることができる問題を扱っている。\cite{klauvco2014mixed}
+	
+	%3. ドローンを用いた配送計画のうち、SOCP を用いた先行研究の概略（参考文献３個以上）2.ここは、Klauco のようなドローンと船のルートの計算結果の図を用いて説明すると分かりやすくなります。
+	%1. garone
+	%2. gambella
+	%3. 
+	CVTSPを定式化する研究についてより詳しく述べる。Garoneらの研究において、事前に目的地をたどる順番を与えられたときのドローンの離着陸地点を決める問題の定式化が与えられた。\cite{garone2010planning}
+	その後、目的地も離着陸点の決定と同時に求められるモデルがGambellaらの研究によって示された。\cite{gambella2018exact}
+	ここで示されたモデルを用いてCVTSPを実際に解いてみると、図\ref{fig:example_CPLEX}のような経路となる。
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[scale = 0.7]{resources/cplex_sample.png}
+		\caption{ソルバーでCVTSPを説いた例}
+		\begin{minipage}[c]{0.7\hsize}
+			$p_s$からスタートし、すべての目的地$q$をたどったあと$p_f$に至る最短の経路赤色の丸と四角はそれぞれドローンの離着陸地点を表している。
+		\end{minipage}
+		\label{fig:example_CPLEX}
+	\end{figure}
+	
+	%4. 今までの先行研究で足りていないことは何か
+	
+	%5.「本論文では、」で始める段落を作って、本論文で何をやったのかの概略を１ or 2 段落程度でまとめる
+	本論文では、目的地のそれぞれが配達の時間制限を持つCVTSPを定義し、焼きなまし法と呼ばれるヒューリスティック手法を用いて高速でより精密な近似解を求めることを目標とする。
+	提案手法では、この問題を目的地をたどる順番を求める問題と、ドローンの離着陸地点を求める問題の２つに分割し、前者は離散最適化問題であるためヒューリスティック手法を用いて決定し、後者は連続最適化問題であり、二次錐計画問題として定式化した後CPLEXという既存ソルバーを用いて決定した。
+	
+	%6. 数値実験でどんなことをやったか、をまとめて、実際にどういった結果が得られたか（計算時間が 5% 削減できたとか。）
+	実験では、対象とする問題を直接混合整数二次錐計画問題として定式化しCPLEXで求めた手法と提案手法との比較を行った。
+	その結果、精度は目的地数が17以下の場合の誤差が10\%程度であるが、実行時間は大幅に短くなった。
+	また、提案手法のパラメータの一つであるイテレータ数を変化させ、結果を観察した。ここからイテレータ数を大きくすればおおよそ結果が改善することがわかった。
+	
+	本論文の構成は次のようになっている。
+	第二章で本論文で用いる焼きなまし法とMISOCPの概略と２つの先行研究について説明し、第三章では時間制約付きcarrier-vehicle Traveling Salesman (CVTSPWT)問題を定義してMICOSPとして定式化する。
+	その後、第四章ではCVTSPWTへの手法を提案し、第五章では生成したCVTSPWT問題のインスタンスを用いて数値実験を行う。
+	最後に第六章で本論文のまとめと今後の課題について述べる。
+	
+	\subsection{記法}\label{sec:notation}
+	
+	
+	この論文で扱う記法を述べる。
+	\begin{itemize}
+		\item $\|\cdot\|$はユークリッドノルムとする。
+		\item 上付き添え字 $T$ は行列やベクトルの転置を示す。
+		\item $\x^T \y$はベクトル$\x,\y \in \Real^n$の内積$\sum_{i=1}^n x_i y_i$である。
+		\item ２つのベクトル$\x , \y \in \Real^n$に対して、$\x \circ \y$を次のように定義する。
+	\end{itemize}
+	
+	\clearpage
+	\section{先行研究}\label{sec:previousResarch}
+	この章では時間制約なしのCVTSPを扱っている二つの先行研究を紹介する。前者はCVTSPの定式化について、後者はCVTSPを解く手法について説明をする。また、焼きなまし法と混合整数二次錐計画問題についても事前知識として扱う。
+	\subsection{混合整数二次錐計画問題}\label{sec:MISOCP}
+	二次錐計画問題はノルムを扱えるため汎用性が高いだけでなく、内点法を用いて効率的に求解をすることができるという特徴がある。\cite{potra2000interior}本章の定義は\cite{boyd2004convex}を参考にしている。
+	
+	$m_i$次元の二次錐$\mathcal{K}_i$を
+	\begin{equation}
+		\mathcal{K}_i  = 
+		\begin{cases}
+			(z_0, \bar{z}) \in \Real \times \Real^{m_{i-1}}:z_0\geq ||\bar{z}||&(m_i > 0)\\
+			z \in \Real:z\geq 0&(m_i = 0)
+		\end{cases}
+	\end{equation}
+	と定義する。
+	
+	$\mathcal{K}$を$\mathcal{K}_1$から$\mathcal{K}_l$の直積とすると、
+	二次錐計画問題(SOCP)の一般的な形は
+	\begin{align}
+		\begin{array}{rcl}
+			\min & : & \f ^T\x \\
+			\text{subject to} & : &\x \in \mathcal{K} \\
+			& & \F\x=\g\\
+		\end{array}
+	\end{align}
+	で定義できる。
+	ここで、$f \in \Real^n , \A_i \in \Real^{n_i\times n}, \b_i \in \Real^{n_i}, \c \in \Real^n, \d_i \in \Real, \F \in \Real^{p\times n}, \g \in \Real^p$は定数で$\x \in \Real^n$は目的変数である。
+	
+	SOCPをノルムを用いて変形すると以下の数式のように表せる。
+	
+	\begin{align}
+		\begin{array}{rcl}
+			\min & : & \f ^T\x \\
+			\text{subject to} & : &||\A_i x +\b_i||_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
+			& & \F\x=\g\\
+		\end{array}
+	\end{align}
+	
+	
+	次に混合整数二次錐計画問題(MISOCP)の定義について述べる。
+	% 変形した最適化問題の定義
+	\begin{align}
+		\begin{array}{rcl}
+			\min & : & \f ^T\x \\
+			\text{subject to} & : &||\A_i x +\b_i||_2 \leq \c_i^T\x+\d_i, i = 1,\dots, m \\
+			& & \F\x=\g\\
+			& & \x_i \in \mathbb{Z}, (i=1,\dots, n)
+		\end{array}
+	\end{align}
+	
+	
+	混合整数二次錐計画問題は決定変数が離散であるため組合せ最適化のアルゴリズムを用いて最適値を求める必要がある。branch-and-cut\cite{drewes2009mixed}が代表的な手法である。
+	\subsection{Gambellaらの手法}\label{sec:gambella}
+	
+	Gambellaらの用いたCVTSPに対するMISOCPでの定式化について解説する。このモデルは事前に目的地を辿る順番が与えられている状況でvehicleの離着陸地点を決める問題であるcarrier-vehicle problem(CVP)を解くためにGarone et al(2010)\cite{garone2010planning}において定義されたモデルをCVTSPに拡張したものである。このモデルの特徴は、目的地を辿る順番を決定変数として組み込んでいるため、vehicleの離着陸地点の決定問題と同時にそれらを求めることができる点にある。
+	
+	このモデルは、depotから出発しすべての目的地を辿り再びdepotに戻る時間の総和である線形な目的関数と、離着陸地点と目的地の距離と移動時間と速さの関係であるノルムを含んだ不等式、変数に対する下限と上限を定めた線形な制約式からなっているためMISOCPである。
+	
+	\subsection{焼きなまし法の説明}\label{sec:SA}
+	%欲しい参考文献(焼きなましについて詳しい論文、TSPやその他問題を解く論文、Branch-and-cutと比較した論文)
+	%1. 焼きなまし法とは何か. どう言う問題に使えるのか、他の手法と比較して何が違うのか。タブーやGA, 山登りと比べる？ ok
+	焼きなまし法(Simulated Annealing)とは、最適化問題に対し現実的な時間で近似解を求めるための確率的メタヒューリスティクスの一種である。\cite{kirkpatrick1983optimization} この手法は巡回セールスマン問題\cite{geng2011solving}や充足可能性問題\cite{spears1993simulated}といった探索空間が離散である問題に適用することができる。目的関数値が良くなる場合にのみ解を更新する山登り法(Hill Climging approach)と比較したとき、SAは目的関数値が悪くなる場合も確率的に解を更新することからより局所最適値に陥りにくい手法であるといえる。大域的最適解を求める手法であるBranch-and-cutは解が良くなる可能性のある状態空間をすべて探索するのに対し、SAは現在の解の近傍のみを探索している。そのためSAはbranch-and-cutと比較した場合に大域的最適解は求まらない可能性があるが、高速に近似解を求められる利点がある。
+	
+	%2. どう言う特徴なのか. 温度と確率に関して
+	SAは目的関数値が悪くなる場合に遷移する確率のパラメータとして温度をもつ。
+	温度が高いほど様々な解を探索する確率が高く、温度が低いほど目的関数地が向上する解にのみ遷移する確率が高まる。
+	通常は高い初期温度から徐々に低い最終温度へと下げていく。これにより、広い解を探索しながら最終的には収束するようなスケジュールとすることができる。
+	遷移確率は通常、目的関数地が良くなる場合には１をとり、それ以外の場合には温度に応じた確率関数として設計する。
+	ここでは一例としてkirkpatrickらが示した最小化問題に対する遷移確率関数を示す。ここで$s$は現在の状態、$s`$は次の状態、$T$は温度とする。
+	\begin{equation}  \label{eq: probFunction}
+		P(s, s`, T)=
+		\begin{cases*}
+			1   &   if\ $s`<s$  \\
+			exp (\frac{s-s`}{T})     &   if\ $s`\geq s$ 
+		\end{cases*}
+	\end{equation}
+	
+	
+	最小化問題に対する焼きなまし法の疑似アルゴリズムの一種(アルゴリズム\ref{alg:SimulatedAnnealing})を示す。このアルゴリズムは目的関数値との誤差を終了条件に含んでいないため最終結果を保証できないが、現実的な時間で近似解を求めることができる。
+	
+	
+	\begin{algorithm}[tb]
+		\caption{焼きなまし法}
+		\label{alg:SimulatedAnnealing}
+		\begin{algorithmic}[1]
+			\STATE イテレーション数$k = 0$と最大イテレーション数$k_{max}$をとる
+			\STATE 初期状態$state$を一つとり、最良状態$bestState$とする。その時の目的関数値$score$を最良スコア$bestScore$とする。
+			\WHILE{$k<k_{max}$}
+			% 	\WHILE{$N \neq 0$}
+			\STATE $k, k_{max}$をもとに現在の温度tempを求める。
+			\STATE 新しい状態$newState$を得る。
+			\STATE 新しい状態の目的関数値$newScore$を得る。
+			\STATE $temp$と$newScore,score$をもとに遷移確率$prob$を求める。$newScore<score$である場合$prob=1$を満たすとする。
+			\IF{$newScore < bestScore$}
+			\STATE $bestScore \Leftarrow newScore$
+			\STATE $bestState  \Leftarrow newState$
+			\ENDIF
+			\STATE $rand$を[0,1]の乱数として得る。
+			\IF{$rand<prob$}
+			\STATE $state \Leftarrow newState$
+			\STATE $score  \Leftarrow  newScore$
+			\ENDIF
+			\ENDWHILE
+			\STATE $bestState$を出力する
+		\end{algorithmic}
+	\end{algorithm}
+	
+	
+	
+	\subsection{Larasatiらの手法}\label{larasati}
+	larasatiらの手法\cite{larasati2022integrated}、特にCVTSPを得ヒューリステックであるアルゴリズム\ref{alg:larasati}について解説する。このアルゴリズムにおいて、$x_0$は解の一つ、$f(x_0)はx_0$における目的関数値を表す。
+	
+	
+	
+	\begin{algorithm}[tb]
+		\caption{ALG-SA}
+		\label{alg:larasati}
+		\begin{algorithmic}[1]
+			\STATE INPUT:目的地の座標
+			\STATE 初期温度$T_{first}$, 目標温度$T_{last}$, 最大ステップ数$S_{max}$とする
+			\WHILE{$T_k>T_{last}$}
+			\FOR{新規の解の数$n_{solution}$}
+			\STATE 新しい解$x_0+\Delta x$を取る。
+			\IF{$f(x_0+\Delta x)<f(x_0)$}
+			\STATE $f_{new} \Leftarrow f(x_0+\Delta x)$
+			\STATE $x_0 \Leftarrow x_0+\Delta x$
+			\ELSE
+			\STATE $\Delta f \Leftarrow f(x_0+\Delta x) - f(x_0)$
+			\STATE rを0から１の乱数として取る。
+			\IF{$r>exp(\Delta f/T)$}
+			\STATE $f_{new} \Leftarrow f(x_0+\Delta x)$
+			\STATE $x_0 \Leftarrow x_0+\Delta x$
+			\ELSE
+			\STATE $f_{new} \Leftarrow f(x_0)$
+			\ENDIF
+			\ENDIF
+			\ENDFOR
+			\STATE $f \Leftarrow f_{new}$
+			\STATE $k\Leftarrow k+1$
+			\STATE 温度$T_k$を線形関数で更新する。
+			\ENDWHILE
+			\STATE 最適な訪れる順序$x_0$を出力
+		\end{algorithmic}
+	\end{algorithm}
+	
+	数値実験の結果\cite{larasati2022integrated}として、目的地の数が3から9の範囲では最適値との誤差が1\%未満、11から15の範囲では10\%未満であった。
+	また、計算時間に関しては、25点で0.57秒ほどであった。
+	一方、GUROBIでは13点以上になると1800秒では求解ができなかった。よってlarasatiらが提案した手法は、ターゲット数が増えるほど有用であるといえる。
+	
+	\clearpage
+	\section{問題設定}\label{sec:Second_Order_Cone_Programming_without_interiorpoint}
+	\subsection{問題の定義}\label{sec:problem_settings}
+	本研究が対象とするCVTSPWT (Carrier Vehicle Travering Salesman Problem with Time Window)についての説明を与える。
+	
+	CVTSPWTには異なった性質を持つ二種類の乗り物を用いる。
+	\begin{itemize}
+		\item[vehicle] 速度が速く直接目的地に向かうのに用いる。しかしバッテリー量に限界があり一回の航行可能距離には上限が存在する。そのため、目的地に近づくまではcarrierによって運ばれる。バッテリー量はcarrierと合流すると上限まで戻る。バッテリー交換に要する時間は0とする。
+		\item[carrier] 速度が遅いため直接目的地に向かうのに用いず、離陸地点までvehicleを輸送したのち着陸地点まで移動しvehicleを回収する用途で用いる。移動距離に上限は存在しない。
+	\end{itemize}
+	以後vehicleとcarrierが分離することを離陸、vehicleとcarrierが合流することを着陸と呼ぶ。
+	
+	この問題の目的は座標$q_o$から出発し、すべての目的地を訪れた後$q_f$に至るまでの時間の最小化である。移動に関してユークリッド平面上の任意の点に移動することができ、離着陸点も任意の座標を指定できる。目的地$q_i$には時間制約$(u_{i1}, u_{i2})$が設定されており、この時間内に必ず訪れなければならない。
+	本問題に対して時間制約を$(0,\infty)$としドローンの航続可能距離を0とするとTSPと同じ設定となることから、TSPより少なくとも難しい問題である。
+	
+	目的地の数が3である場合の例を示す。座標と時間枠をそれぞれ表\ref{tb:settings_sample}で定義する。このときの最適ルートと離着陸点を図示すると図\ref{fig:settings_sample}となる。
+	$q_o$から最も近い目的地である$q_2$を訪れる場合時間枠の開始時間より早く到着してしまいその場所で停止する必要があるため、より開始時間が早い$q_3$を先に訪れていることが分かる。
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{問題例}
+		\begin{tabular}{l|l|l}
+			名称 & 座標 & 時間枠 \\ \hline\hline
+			$q_o$ & (0,0) & None \\
+			$q_f$ & (50,50) & None \\ \hline
+			$q_1$ & (45,45) & (0,4) \\
+			$q_2$ & (10,40) & (3,6) \\
+			$q_3$ & (30,20) & (2,6) \\ \hline \hline
+		\end{tabular}
+		\label{tb:settings_sample}
+	\end{table}
+	%todo: 初期位置はp_o, p_fである。
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[scale = 0.70]{resources/settings_sample.png}
+		\caption{問題例の最適解}
+		\begin{minipage}[c]{0.7\hsize}
+			青色の丸は開始地点、終了地点、目的地のいずれかを表す。赤色の丸は離陸地点、赤色の四角は着陸地点を表す。黒の実線はcarrierとvehicleが同時に移動している箇所を表し、赤の点線はcarrierのみ青の点線はvehicleのみが移動している箇所を表す。
+		\end{minipage}
+		\label{fig:settings_sample}
+	\end{figure}
+	
+	\subsection{MISOCPとして定式化}\label{sec:formulation_as_MISOCP}
+	% cplexの解法は数値実験章で比較するのみ
+	% 誰の既存研究の結果を用いているかを必ず明記する。
+	ここでは、対象問題を解くためのモデルをMISOCPを用いて定式化する。これは、Gambellaらの先行研究\cite{gambella2018exact}の拡張である。
+	
+	まずは定数を定義する。
+	\begin{itembox}[l]{定数}
+		\begin{description}
+			\item[$n \in \mathbb{N}$]目的地の数
+			\item[$\q_i \in \Real^2, i=1,\dots,n$]目的地$i$の座標
+			\item[$\q_{min}\in \Real^2$] $\q_i$の下限
+			\item[$\q_{max}\in \Real^2$]  $\q_i$の上限
+			\item[$V_v\in \Real_+$] vehicleの速さ
+			\item[$V_c\in \Real_+$] carrierの速さ
+			\item[$a\in \Real_+$] vehicle が一回の輸送で移動できる距離の上限
+			\item[$\p_o\in \Real^2$]輸送パスの開始座標
+			\item[$\p_f\in \Real^2$]輸送パスの終了座標
+			\item[$\u_{i1}\in \Real^2, i=1,\dots,n$] 目的地$i$の受け入れ開始時間
+			\item[$\u_{i2}\in \Real^2, i=1,\dots,n$] 目的地$i$の受け入れ終了時間
+		\end{description}
+		\label{tb:constant}
+	\end{itembox}
+	Gambellaらの研究の定数に時間枠$\u$を加え拡張した。
+	下限と上限に関して詳しく説明する。
+	下限は$q_i$が以下の条件を満たすよう制約するものである。
+	$q_{min,1}\leq q_{i,1}, q_{min,2}\leq q_{i,2}, i = 1,\cdots,n$
+	同様に、上限は$q_i$が以下の条件を満たすよう制約するものである。
+	$q_{max,1}\geq q_{i,1}, q_{max,2}\geq q_{i,2}, i = 1,\cdots,n$
+	
+	次に決定変数を定義する。
+	
+	\begin{itembox}[l]{変数}
+		\begin{description}
+			\item[$\Q_i\in \Real^2, i=1,\dots,n$] $i$番目に訪れる目的地の座標
+			\item[$\w_{ij} \in \{0,1\}^{n\times n}, i=1,\dots,n,j=1,\dots,n$] $i$番目に目的地jに訪れる場合を１、それ以外を0とするバイナリ変数
+			\item[$\p_{to, i}\in \Real^2, i=1,\dots,n$] $\Q_i$にむけて離陸するときの座標
+			\item[$\p_{l, i}\in \Real^2, i=1,\dots,n$] $\Q_i$を訪れた後に着陸するときの座標
+			\item[$\t_{i,1}\in \Real,i=1,\dots,n$] vehicleが$\p_{to, i}$ から $\Q_i$に移動するのにかかる時間
+			\item[$\t_{i,2}\in \Real,i=1,\dots,n$]vehicleが$\Q_i$から$\p_{l, i}$に移動するのにかかる時間
+			\item[$\t_i\in \Real,i=1,\dots,n$] carrierが$\p_{to, i}$から$\p_{l, i}$に移動するのにかかる時間
+			\item[$T_1\in \Real$] carrierが$\p_o$から  $\p_{to, 1}$に移動するのにかかる時間
+			\item[$\T_i\in \Real,i=2,\dots,n$] carrierが$\p_{l, i-1}$から  $\p_{to, i}$に移動するのにかかる時間
+			\item[$T_{n+1}\in \Real$] carrierが$\p_{l,n}$から  $\p_{f}$に移動するのにかかる時
+			\item[$\U_{i1}\in \Real^2, i=1,\dots,n$] $\Q_i$の受け入れ開始時間
+			\item[$\U_{i2}\in \Real^2, i=1,\dots,n$] $\Q_i$の受け入れ終了時間
+		\end{description}
+	\end{itembox}
+	
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[scale = 0.7]{resources/variables.png}
+		\caption{例}
+		\begin{minipage}[c]{0.7\hsize}
+			青色の丸は開始地点、終了地点、目的地のいずれかを表す。赤色の丸は離陸地点、赤色の四角は着陸地点を表す。黒の実線はcarrierとvehicleが同時に移動している箇所を表し、赤の点線はcarrierのみ青の点線はvehicleのみが移動している箇所を表す。
+		\end{minipage}
+		\label{fig:definition_sample}
+	\end{figure}
+	
+	図(\ref{fig:definition_sample})は青丸で示した$q_1, q_2$に対するCVTSPTWの実行可能解の一つである。
+	この時、$q_2, q_1$の順番で訪れていることから、$Q_1 = q_2, Q_2=q_1$となる。よって
+	$\w = 
+	\begin{bmatrix}
+		0 & 1 \\
+		1 & 0 \\
+	\end{bmatrix}
+	$
+	である。
+	時間制約に関して、$U_{1,1}<T_1+t_{1,1} <U_{1,2}, U_{2,1}<T_1+t_{1,1}+T_2+t_{2,1}<U_{2,2}$を満たせば十分であることもわかる。
+	
+	
+	問題をMISOCPとしてモデル化する。
+	\mathtoolsset{showonlyrefs=false}
+	\begin{eqnarray}
+		\label{eq:formulation}
+		\min & : & \sum_{i=1}^{n}t_i+\sum_{i=1}^{n+1}T_i \label{obj}\\
+		\text{subject to} & : &\|Q_i - p_{to,i}\|\leq V_v t_{i, 1}\ (\forall i = 1,\dots ,n)\label{cst1}\\
+		& & \|Q_i - p_{l,i}\|\leq V_v t_{i, 2}\ (\forall i = 1,\dots ,n)\label{cst2}\\
+		& & \|p_{to,i} - p_{l,i}\|\leq V_c t_i\ (\forall i = 1,\dots ,n)\label{cst3}\\
+		& & \|p_o - p_{to,1}\|\leq V_c T_1\label{cst4}\\
+		& & \|p_{l,i-1}- p_{to,i}\|\leq V_c T_i\ (\forall i = 2,\dots ,n)\label{cst5}\\
+		& & \|p_f- p_{l,n}\|\leq V_c T_{n+1}\ \label{cst6}\\
+		& & t_{i,1}+t_{i,2}\leq t_i \ (\forall i = 1,\dots ,n)\label{cst7}\\
+		& & Q_i = \sum^n_{j=1}{w_{i,j}q_j}\ (\forall i = 1,\dots ,n)\label{cst8}\\
+		& & \sum^n_{j=1}{w_{i,j}} = 1\ (\forall i = 1,\dots ,n)\label{cst9}\\
+		& & \sum^n_{i=1}{w_{i,j}} = 1\ (\forall j = 1,\dots ,n)\label{cst10}\\
+		& & t_{i,1}\geq 0\ (\forall i = 1,\dots ,n)\label{cst11}\\
+		& & t_{i,2}\geq 0\ (\forall i = 1,\dots ,n)\label{cst12}\\
+		& & 0\leq t_1 \leq a \ (\forall i = 1,\dots ,n)\label{cst13}\\
+		& & T_i\geq 0\ (\forall i = 1,\dots ,n)\label{cst14}\\
+		& & q_{min}\leq Q_i \leq q_{max}\ (\forall i = 1,\dots ,n)\label{cst15}\\
+		& & w_{ij} \in \{0,1\}\ (\forall i = 1,\dots ,n,\forall j = 1,\dots ,n)\label{cst16}\\
+		& & U_{i,1} \leq T_1+t_{1,1}+ \sum_{j=1}^{i-1}{t_{j,2}+T_{j+1}+t_{j+1, 2}} \leq U_{i,2}\label{cst17}\\
+		& & U_{i,1} = \sum^n_{j=1}{w_{i,j}u_{i,1}}\ (\forall i = 1,\dots ,n)\label{cst18}\\
+		& & U_{i,2} = \sum^n_{j=1}{w_{i,j}u_{i,2}}\ (\forall i = 1,\dots ,n)\label{cst19}
+	\end{eqnarray}
+	\mathtoolsset{showonlyrefs=true}
+	
+	目的関数(\ref{obj})は総行程にかかる時間、具体的にはcarrierが$q_o$を出発し、vehicleがすべての目的地をたどり$q_f$に至るまでの時間の総和である。
+	制約式(\ref{cst1})(\ref{cst2})はvehicleが$p_{to,i}$から離陸して$Q_i$に至る時間、$Q_i$から$p_{l,i}$に着陸する時間をそれぞれ表している。(\ref{cst3})はcarrierが$p_{to,i}$から$p_{l,i}$に至る時間を表している。
+	このときvehicleとcarrierは分離している点に注意する。
+	制約式(\ref{cst4})-(\ref{cst6})はcarrierとvehicleが同時に移動しているときの時間を表している。
+	(\ref{cst7})はvehicleがcarrierより早く着陸地点に到着して待たないことを制約している。
+	(\ref{cst8})はi番目に訪れる座標が$q_j$であることを保証するための制約である。
+	(\ref{cst9}),(\ref{cst10})はそれぞれi番目に訪れる目的地は1つであること、各目的地には一度訪れることを保証している。(\ref{cst11})-(\ref{cst15})はぞれぞれvehicle, carrierの移動時間が負とならないことを保証している。
+	特に(\ref{cst13})はvehicleが移動できる時間の上限を$a$で制限している。
+	(\ref{cst17})は各時間制約に違反しないことを保証するための制約である。
+	具体的には、各目的地$Q_i$に訪れるまでのvehicleの移動時間の総和$T_{sum,i}$が$T_{sum,i} \in [U_{i,1},U_{i,2}]$を満たすことを保証している。(\ref{cst18}),(\ref{cst19})は$Q_i$に対応する時間窓を割り当てるための制約である。
+	
+	制約式(\ref{cst1})-(\ref{cst6})は二次錐制約であり(\ref{cst7})-(\ref{cst19})は線形制約であること、決定変数$w_{ij}$は整数制約を持つためこのモデルはMISOCPである。
+	
+	\clearpage
+	\section{提案手法}\label{sec:SimulatedAnnealing}
+	
+	
+	% ヒューリスティックを強調した章の名前にしてもいいかも
+	% 問題を２ステップに分けて考える。辿る順番を求めるパートと、位置を決めるパート
+	% 辿る順番を決めるのにSAを用いる
+	% 辿る順番は組合せ最適化問題であり、選び方が途方もなくあるため全部見るのは困難
+	%　よってこのパートはヒューリスティックを用いて克服する
+	% 初期回の生成を緩和問題をソルバーで解くことにより効率化できる旨も記す。
+	本章では提案手法について述べる。
+	Larasati et al(2022)\cite{larasati2022integrated}を参考にし、CVTSPWTに対して使えるよう拡張した。
+	時間制約をつけるために、目的地を訪れる順番が決まった後の離着陸地点を決める問題に対して\ref{eq:formulation}で定義した最適化問題を用いる。
+	
+	提案するアルゴリズムは1.訪れる順番を決める離散最適化問題,2.最適な離着陸点を決める連続最適化問題の２つの最適化問題を解くことで近似解をもとめるものである。
+	もともとの問題はMISOCPであり、CPLEXやGUROBIなどのMISOCPを扱える既存のソルバーを用いれば厳密解の求解が可能であるが、長時間の計算時間が必要である。
+	一方たどる順番が与えられて最適な離着陸地点を求める問題はSOCPとなり高速にソルバーを用いて最適解が求まる。
+	
+	最適な訪れる順番を決める問題は、離散計画問題であり一般に汎用ソルバーを用いての計算には非常に時間がかかる。そこで本論文ではメタヒューリスティックの一種である焼きなまし法を用いて解の探索を行う。焼きなまし法では、局所最適解をなるべく避けるために、解の評価値が悪化する場合も確率的に遷移する特徴を持つため、すべての状態を列挙する方法や、解が改善された場合のみ遷移を行う方法と比べて、効率的に良い解が得られる。
+	
+	提案手法のアルゴリズム\ref{alg:proposedMethod}の詳細を示す。このアルゴリズムは\ref{sec:SA}章で示した焼きなまし法をベースとした手法である。
+	
+	まずは提案手法の中で用いている関数を提示する。
+	初期状態を得る関数$getFirstState()$, 次の状態を得る関数$getNextState()$, 状態に対する目的関数値を得る関数$getScore()$, 遷移確率を計算する関数$getProb()$, 温度を計算する関数$getTemp()$をそれぞれ定義する。
+	状態$state$は目的地を訪れる順番を表す行列とする。
+	
+	\begin{algorithm}[tb]
+		\caption{提案手法}
+		\label{alg:proposedMethod}
+		\begin{algorithmic}[1]
+			\STATE INPUT:目的地と開始終了地点の座標、目的地の時間枠
+			\STATE 定数の設定:初期温度$T_{first}$, 目標温度$T_{last}$,イテレーション回数$k_{max}$
+			\STATE $k \Leftarrow 0$
+			\STATE $state \Leftarrow getFirstState()$
+			\STATE $score \Leftarrow getScore(state)$
+			\STATE $bestState \Leftarrow state, bestScore \Leftarrow score$
+			\WHILE{bestStateが実行可能解でない、または、前回のループでbestScoreが更新された}
+			\WHILE{$k<k_{max}$}
+			\STATE $temp \Leftarrow getTemp(k, k_{max})$
+			\STATE $newState \Leftarrow getNextState(state)$
+			\STATE$ newScore \Leftarrow getScore(newState)$
+			\STATE $prob \Leftarrow getProb(temp,newScore,score)$
+			\IF{$newScore < bestScore$}
+			\STATE $bestScore\Leftarrow newScore$
+			\STATE $bestState \Leftarrow newState$
+			\ENDIF
+			\STATE $rand \Leftarrow random(0,1)$
+			\IF{$rand<prob$}
+			\STATE $state \Leftarrow newState$
+			\STATE $score  \Leftarrow  newScore$
+			\ENDIF
+			\ENDWHILE
+			\ENDWHILE
+			\STATE OUTPUT:$bestState, bestScore$がそれぞれ最適解と最適値
+		\end{algorithmic}
+	\end{algorithm}
+	
+	\mathtoolsset{showonlyrefs=false}
+	$ state$を受容する確率を計算する関数を式\ref{eq: getProb}で定義する。
+	遷移確率はスコアが改善していれば1, そうでなければ0以上1以下の正実数を返す必要がある。スコアが改善しているほど1に近いことと温度が高いほど遷移しやすいことを表現するために\ref{sec:SA}章で紹介した以下の定義を用いる。
+	\begin{equation}  
+		getProb(temp,newScore,score)=
+		\begin{cases*}
+			1   &   if\ $newScore<score$  \\
+			exp (\frac{score-newScore}{temp})     &   if\ $newScore\geq score$ 
+		\end{cases*}
+		\label{eq: getProb}
+	\end{equation}
+	
+	現在の試行回数から、温度パラメータを計算する関数を式\ref{eq: getTemp}で定義する。
+	温度は初期の大きい値$firstTemp$から最終的な小さい値$lastTemp$へと徐々に下がっていくように設計する。
+	今回の関数は$k$に対する単調減少な線形関数であり、線形スケジュールと呼ばれる。
+	\begin{equation}  \label{eq: getTemp}
+		getTemp(k, k_{max})=firstTemp+\frac{k}{k_{max}}(lastTemp-firstTemp)
+	\end{equation}
+	
+	
+	初期状態を求める関数を式\ref{eq: getFirstState}で定義する。
+	初期状態は、アルゴリズムを実行する時の最初の解であり、高速で求められることが望ましい。
+	初期状態は一般的にランダムに求められることが多く、そのような場合でも適切に実行すれば焼きなまし法は収束する。
+	本論文でもたどる順番がランダムと成るような解を返す関数として構成している。
+	
+	\begin{equation}  \label{eq: getFirstState}
+		getFirstState()=
+		単位行列\I　の任意の数の行または列を入れ替えた行列\\
+	\end{equation}
+	
+	状態のスコアを求める関数を式\ref{eq: getScore}で定義する。
+	本論文では、スコアを\ref{sec:formulation_as_MISOCP}章で定義した最適化問題の状態ｗを決定変数でなく入力とした最適化問題を構成し、その最適値として定義する。
+	この変換により、整数変数がなくなるため、モデルのクラスがMISOCPからSOCPとなり、高速な求解が可能となる。
+	ここで、スコアとは状態と理想とする状態との近さを表現できていればよく、必ずしも最適化問題の最適値でなくても良いことに注意する。
+	
+	それぞれの目的地に対して訪れることが可能な時間枠の制約があるため、入力された順番によっては実行可能な離着陸地点が存在しない場合がある。
+	その場合は通常の最適化問題であれば解なしとなり最適値が求まらないが、焼きなまし法では繰り返しの処理の中で解の評価を行う必要があるため、今回は一定の大きい値を代わりに返すことで解の評価値の代わりとしている。
+	
+	\begin{equation}  \label{eq: getScore}
+		getScore(state)=
+		\begin{cases*}
+			SOCPの最適値   &   if\ stateに対して実行可能な解が存在する  \\
+			$M$     &   if\ stateに対して実行可能な解が存在しない\\
+		\end{cases*}\\ 
+	\end{equation}
+	ただし、$M$は十分大きい実数
+	
+	状態を入力として新たな状態を求める関数getNextStateを定義する
+	焼きなまし法では、もとの状態を少し変化させたものを新しい状態として得ることが多く、この新たな状態を近傍と呼ぶ。
+	本論文では近傍を2-swapとして得る。
+	2-swapは、現在の訪れる順番のうち、任意の二箇所を選び、それらを入れ替える操作として定義する。
+	通常のTSPでは訪れる経路の中で交差している箇所の交差を解消する操作である2-optも効果的である。
+	
+	\mathtoolsset{showonlyrefs=true}
+	
+	図(\ref{fig:solved_by_proposed_method})は提案手法を用いて、目的地数が9の問題インスタンスを作成し、実際に解いたときの画像である。
+	
+	
+	
+	\begin{figure}[htbp]
+		\begin{minipage}[l]{0.5\hsize}
+			\centering
+			\includegraphics[scale = 0.45]{resources/example_instance.png}
+		\end{minipage} 
+		\begin{minipage}[c]{0.5\hsize}
+			\centering
+			\includegraphics[scale = 0.45]{resources/example_solved_SA.png}
+		\end{minipage} 
+		\caption{提案手法を用いてCVTSPWTを解いた例}
+		\label{fig:solved_by_proposed_method}
+	\end{figure}
+	
+	\clearpage
+	\section{数値実験}\label{sec:Numerical_Experience}
+	この章では、CVTSPWTのデータセットを作成し、実際に提案手法を用いて解くことでその性能を評価する。本論文では、SOCPを解くソルバーとして、IBM社のCPLEXを用いた。
+	
+	実験を行った実行環境は以下である。
+	\begin{itemize}
+		\item OS: macOS Monterey 12.6.2
+		\item プロセッサ:Intel Dual Core i5 1.6 GHz
+		\item RAM: 8.0GB
+		\item プログラミング言語: Julia
+	\end{itemize}
+	
+	\subsection{パラメータの設定}\label{sec:parameter_settings}
+	%TODO: 引用元を示す。aをもう少し詳しく説明する。
+	\ref{tb:constant}章で定義した定数を数値実験では表\ref{tb:constan_setting}として定める。
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{定数の設定}
+		\begin{tabular}{|l|c|}
+			\hline
+			定数 & 値  \\ \hline\hline
+			$n$ & 問題ごとに設定する  \\
+			$q_i$ & \ref{sec:Problem_Generation}章にて生成する  \\ 
+			$q_{min}$ & (0,0)  \\
+			$q_{max}$ & (60,60) \\
+			$V_v$ & 60 \\
+			$V_c$ & 18\\
+			$a$ & 21/60  \\
+			$p_o$ & (0,0)  \\
+			$p_f$ & (50,0)  \\
+			$u_{i,1}$ & \ref{sec:Problem_Generation}章にて生成する  \\
+			$u_{i,2}$ & \ref{sec:Problem_Generation}章にて生成する  \\ \hline 
+		\end{tabular}
+		\label{tb:constan_setting}
+	\end{table}
+	
+	提案手法における各種パラメータについても表\ref{tb:approach_parameta}として定める。実際にはデータの性質ごとに調整する必要があるが、本論文では簡単のためにすべて固定する。なお、\ref{sec:relation_with_time_and_score}章の実験の際はイテレータ数を変更しているので注意する。
+	%TODO:名前合わせる
+	\begin{table}[htbp]
+		\centering
+		\caption{提案手法のパラメータの設定}
+		\begin{tabular}{|l|c|}
+			\hline
+			パラメータ & 値  \\ \hline\hline
+			$Temp_{first}$ & 1  \\
+			$Temp_{last}$ & 0.001  \\ 
+			$イテレータ数$ & 50 \\
+			$実行不可能時の最適化問題の値$ & 500 \\ \hline
+		\end{tabular}
+		\label{tb:approach_parameta}
+	\end{table}
+	
+	\subsection{問題の生成}\label{sec:Problem_Generation}
+	数値実験用のテストデータをアルゴリズム(\ref{alg:generate_problem})を用いて生成する。
+	ランダムなｎつの座標をとり、それぞれに時間枠を割り当てるというプロセスで問題生成をおこなう。
+	時間枠のサイズにもランダム性をもたせているため、同じ目的地数の問題でも様々な問題例を生成できる。
+	
+	TODO: アルゴ完成させる。
+	\begin{algorithm}[tb]
+		\caption{問題生成アルゴリズム}
+		\label{alg:generate_problem}
+		\begin{algorithmic}[1]
+			\STATE 目的地の数$n$を設定する。
+			\FOR{$i = 1,\dots,n$}
+			\STATE $x \sim Uni(q_{min,1}, q_{max,1}),y\sim Uni(q_{min,2}, q_{max,2})$なる座標$x,y$を取り、$q_i = (x,y)$とする。
+			\ENDFOR
+			\STATE $i = 1,\dots, k-1$をたどり、$q_k$にたどり着く時間$t_k$をそれぞれ求める。時間は距離の総和をcarrierの速さで割り算出する。
+			\STATE 
+		\end{algorithmic}
+	\end{algorithm}
+	
+	\subsection{実験結果}\label{sec:Numerical_Result}
+	今回の実験の目的地数としてn = (7,9,11,13,15,17,30,50,70)を用い、アルゴリズム\ref{alg:generate_problem}を用いて問題を生成した。
+	n = (7,9,11,13,15,17)の問題をsmall instance、n = (30,50,70)のデータをそれぞれlarge instanceと呼ぶ。
+	前者は主に既存ソルバーとの性能の比較に用い、後者は提案手法の限界性能を測る目的で用いる。
+	small instanceとn=30はそれぞれ７つ、large instanceはそれぞれ3つのデータセットを作成した。
+	CPLEXを用いた手法での計測はsmall instanceに対してそれぞれ一回おこなった。
+	提案手法を用いた計測では、small instanceに対してそれぞれ10回、large instanceに対してはそれぞれ5回行った。
+	
+	実験時間が600秒を超えた場合、実行可能解が存在する場合はその時点での最良解を、そうでない場合はTIME OUTを返すものとする。
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{CPLEXと提案手法の実験結果}
+		\begin{tabular}{|c | c c |c c c c|}
+			\hline
+			% 手法の名前
+			& \multicolumn{2}{c}{CPLEX}& \multicolumn{4}{c}{提案手法}\\
+			% 列名
+			\begin{tabular}{c}n\\targets\end{tabular}
+			% cplex
+			&   \begin{tabular}{c}平均\\計算時間\end{tabular}
+			&   \begin{tabular}{c}標準偏差\\計算時間\end{tabular}
+			%&   \begin{tabular}{c}OptGap\end{tabular}
+			% SA
+			&   \begin{tabular}{c}平均\\計算時間\end{tabular}
+			&   \begin{tabular}{c}標準偏差\\計算時間\end{tabular}
+			&   \begin{tabular}{c}平均\\OptGap\end{tabular}
+			&   \begin{tabular}{c}標準偏差\\OptGap\end{tabular}\\ 
+			\hline \hline
+			%contents
+			7 
+			& 4.686 & 2.409  
+			& 5.404 & 0.794 & \begin{tabular}{c}3.646(\%)\\ \end{tabular} &0.037\\
+			\hline
+			9
+			& 10.453 & 8.695 
+			& 7.145 & 1.840 & \begin{tabular}{c}5.802(\%)\\ \end{tabular} & 0.0776\\
+			\hline
+			11
+			& 42.565 & 47.487 
+			& 21.464 & 4.893 & \begin{tabular}{c}2.186(\%)\\ \end{tabular} & 0.020\\
+			\hline
+			13
+			& 287.809 & 219.355 
+			& 10.144 & 1.05 & \begin{tabular}{c}6.027(\%)\\5.987(\%)(*)\\ \end{tabular}& \begin{tabular}{c}0.055\\N/A(*)\\ \end{tabular}\\
+			\hline
+			15
+			& 516.408 & 221.280 
+			& 11.949 & 0.896 & \begin{tabular}{c}1.522(\%)\\8.091(\%)(*)\\ \end{tabular} & \begin{tabular}{c}N/A\\0.086(*)\\ \end{tabular}\\
+			\hline
+			17
+			& 600.029 & 0.031 
+			& 15.192 & 0.916 & \begin{tabular}{c}10.997(\%)(*) \\ \end{tabular}&0.151\\
+			\hline
+		\end{tabular}
+		\label{tb:result_of_experiment}
+	\end{table}
+	
+	\subsubsection{計算時間と精度の評価}\label{sec:Evaluation_CPUtime_and_accuracy}
+	% データの説明
+	数値実験の結果は表(\ref{tb:result_of_experiment})に記載している。ここで(*)がついている値は時間制限を超えた時点での最良値であり、値が存在しないものはN/Aとしている。データは各seedでそれぞれ平均をとった値に対し各統計量を求めた。
+	提案手法は一つのインスタンスに対しそれぞれ10回実験を行なっている。表の値を算出するにあたり、次のプロセスを踏んだ。まず同じインスタンスの結果を単純に平均を取る。そのデータに対し平均、標準偏差、OptGapを求めた。
+	%TODO:OptGapの定義
+	$OptGap(\%) =(SA - CPLEX_{opt})/CPLEX_{opt}$
+	
+	%表からわかること
+	表\ref{tb:result_of_experiment}の結果より、CPLEXはnが最大15の場合は最適解を得ることができた。一方、n=13,15,17のいくつかのケースでは最適解を得られなかった。一方、提案手法はどのケースにおいても制限時間内に正常終了していることがわかる。
+	
+	% 画像５からの考察
+	図\ref{fig:opt_gap}は提案手法とCPLEXとのOptGapを表したものである。青色の線は最適解と提案手法との差を、赤色の線は制限時間内の最適なCPLEXの値と提案手法との差を表している。n=17以下の範囲ではCPLEXソルバーと提案手法とのギャップはおおよそ11\%ほどであり、nが増えるほどギャップが大きくなっていることがわかる。提案手法において、精度と実行時間はおおよそトレードオフの関係があるため、精度を高めるためにはイテレータ数を増やすと良いと考えられる。また、アルゴリズムのパラメータである初期温度、最終温度を問題の性質に応じて調整することも精度に寄与すると考えられる。
+	
+	% 画像6からの考察
+	図\ref{fig:computation_time}は提案手法とCPLEXの実行時間を表したものである。CPLEXはnが大きくなるほど実行時間が急速に大きくなっている一方、提案手法では実行時間にそれほど変化がないことがわかる。
+	
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[scale = 0.7]{resources/computation_optgap.png}
+		\caption{最適解と提案手法のギャップ}
+		\begin{minipage}[c]{0.7\hsize}
+			青色の丸は最適値と提案手法の解のギャップの平均を、赤色の三角は制限時間内のCPLEXの最良解と提案手法のギャップの平均を表している。
+		\end{minipage}
+		\label{fig:opt_gap}
+	\end{figure}
+	
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[scale = 0.7]{resources/computation_time.png}
+		\caption{target数ごとのCPLEXと提案手法の計算時間の違い}
+		\begin{minipage}[c]{0.7\hsize}
+			赤色の丸はCPLEXの計算時間の平均を、青色の三角は提案手法の計算時間の平均を表している。
+		\end{minipage}
+		\label{fig:computation_time}
+	\end{figure}
+	\subsubsection{実行不可能な場合の考察}
+	数値実験において、提案手法が制限時間内に実行可能解を得られなかった場合について考察する。なお、今回の実験で用いるデータはデータ生成の方法から必ず一つ以上の実行可能解を持つ。n=50,70のそれぞれ3つのデータセットを5回実験した結果すべて実行可能解が見つからなかった。
+	
+	%なぜ
+	大きいデータセットにおいて実行可能解が見つからなかった理由について考察する。考えられる理由は2つある。
+	１つ目に小さいデータセットと比較して条件が厳しく、実行可能解の濃度が小さい点がある。
+	２つ目に、提案手法は近傍が実行不可能である場合は無条件に受け入れている。つまり、解の状態を度外視して探索しているため、イテレーション回数や温度にかかわらずランダムな状態に遷移してしまう問題がある。
+	
+	%どうすればいい
+	上記の問題を克服する方法を考察する。
+	１つ目の理由に関しては、問題の性質であるため改善が難しい。
+	２つ目の理由に関して、実行不可能の場合には目的関数値が存在しないため、イテレーションに応じて実行可能な状態に近づくスコア関数を設計する。具体的には、時間制約を逸脱している目的地の数の総和などが考えられる。
+	\subsubsection{実行時間と目的関数値の関係}\label{sec:relation_with_time_and_score}
+	この章では、提案手法のパラメータであるイテレーション回数を変化させた場合に、実験時間と目的関数値が同変化するのかを考察する。
+	実験内容は、n=30のデータセットを4つ用い、各データセットに対してイテレーション回数を50,100,200とその結果が\ref{fig:relation_time_with_score}であり、統計量をまとめたものが表\ref{tab:relation_time_with_score}である。
+	
+	これから、イテレーション回数を大きくするほど実行時間の平均も大きくなっていることがわかる。これはイテレーション中で目的関数値が更新されている間はアルゴリズムを実行し続ける性質のため、一回のイテレーションで多くの近傍を探索するほど更新する確率が上がるためと考えられる。
+	またこの性質から、イテレーション回数を大きくするほど目的関数値が大きくなりやすいことも考えられる。
+	
+	まとめると、イテレーション回数は大きいほど良い結果を得やすいがその分時間がかかるといえる。
+	
+	
+	
+	
+	\begin{figure}[htbp]
+		\begin{tabular}{cc}
+			\begin{minipage}[c]{0.5\hsize}
+				\centering
+				\includegraphics[scale = 0.5]{resources/computation_result_3_1055.png}
+				\caption{1055}
+			\end{minipage} 
+			&
+			\begin{minipage}[c]{0.5\hsize}
+				\centering
+				\includegraphics[scale = 0.5]{resources/computation_result_3_1056.png}
+				\caption{1056}
+			\end{minipage}
+			\\
+			\begin{minipage}[c]{0.5\hsize}
+				\centering
+				\includegraphics[scale = 0.5]{resources/computation_result_3_1057.png}
+				\caption{1057}
+			\end{minipage} 
+			&
+			\begin{minipage}[c]{0.5\hsize}
+				\centering
+				\includegraphics[scale = 0.5]{resources/computation_result_3_1058.png}
+				\caption{1058}
+			\end{minipage}
+			\\
+		\end{tabular}
+		
+		\caption{提案手法における実行時間と精度の関係}
+		\begin{minipage}[c]{1\hsize}
+			それぞれのグラフは横軸計算時間、縦軸目的関数値のグラフである。図にそれぞれ示している数字は問題生成に用いたseed値であり、表\ref{tab:relation_time_with_score}と対応している。
+		\end{minipage}
+		\label{fig:relation_time_with_score}
+	\end{figure}
+	
+	\begin{table}[htb]
+		\centering
+		\caption{提案手法におけるiterateと計算時間、目的関数値の関係}
+		\begin{tabular}{|c c|c c c c |} \hline
+			seed & iterate & 平均計算時間&標準偏差計算時間&平均目的関数値&標準偏差目的関数値 \\ \hline
+			\multirow{3}{*}{1055}
+			& 50  & 21.306 &11.547  &20.644  &2.52  \\
+			& 100 & 48.471 & 23.076 & 19.469 & 1.171 \\
+			& 200 & 83.379 & 50.209 & 19.504 & 1.247\\ \hline
+			\multirow{3}{*}{1056}
+			& 50  & 65.160 & 51.528 & 33.573 &1.127\\
+			& 100 & 77.909& 27.302 & 32.379 & 2.101\\
+			& 200 & 131.091& 37.290& 32.129& 1.522\\ \hline
+			\multirow{3}{*}{1057}
+			& 50  & 39.355&22.235 &32.124 &1.202\\
+			& 100 & 42.478& 29.694&34.033 & 0.929\\
+			& 200 &62.091 & 20.348& 33.745&0.866 \\ \hline
+			\multirow{3}{*}{1058}
+			& 50  & 74.875&78.147 & 36.138&1.231\\
+			& 100 & 46.787& 28.616& 35.671&0.835 \\
+			& 200 & 132.493& 85.886&35.601 & 0749\\ \hline
+		\end{tabular}
+		\label{tab:relation_time_with_score}
+	\end{table}
+	
+	\clearpage
+	\section{まとめと今後の課題}\label{sec:Conclusion}
+	本研究では、時間制約付きcarrier-vehicle問題(CVTSPWT)を定義し、問題の一部をSOCPとして定式化し、焼きなまし法と組み合わせて求解を行った。数値実験の結果、CPLEXを用いた方法と比較して高速に近似解がもとまることがわかった。一方、条件が厳しい問題に対しては実行可能解を制限時間内に見つけることができなかった。
+	
+	本研究に対する今後の課題としては、
+	\begin{itemize}
+		\item 初期解をランダムではなく距離と時間枠を考慮した方法で作成する。
+		\item 選んだ経路が実行不可能である時ランダムに遷移しているが、時間枠を満たしているターゲットの個数を増やすようなスコア関数を構成したい。
+		\item 解空間がかなり歪な形をしているため、2-swap以外の近傍関数を構成したい。
+	\end{itemize}
+	\clearpage
+	\section*{謝辞}\label{sec:Acknowledgement}
+	
+	
+	\clearpage
+	\begin{small}
+		\bibliographystyle{jplain}
+		\bibliography{soturon}    
+	\end{small}
+	
+	
 \end{document}
